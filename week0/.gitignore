@@ -1,0 +1,35 @@
+# Node.js & Package Managers
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+
+# Mermaid 임시 파일
+temp-1.png
+temp-1.svg
+docs/erd/temp.png
+docs/erd/temp.svg
+.mermaid-cache/
+
+# draw.io 임시파일
+*.bkp
+*.drawio.bkp
+
+# OS 생성 파일
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ERD 자동 생성 파일들은 포함 (커밋함)
+# docs/erd/*.png
+# docs/erd/*.svg
