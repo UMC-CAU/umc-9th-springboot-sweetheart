@@ -6,7 +6,7 @@ UMC Spring Week0 미션 - 와이어프레임과 IA 분석을 바탕으로 설계
 erDiagram
     %% 사용자 관리
     USERS {
-        int id PK
+        int id PK "AUTO_INCREMENT"
         string email "UNIQUE, NOT NULL"
         string password "NOT NULL"
         string name "NOT NULL"
@@ -118,10 +118,18 @@ erDiagram
         int order_id FK "UNIQUE"
         decimal rating "NOT NULL, 1-5"
         string content
-        string image_urls "JSON"
         boolean is_public "DEFAULT true"
         datetime created_at
         datetime updated_at
+    }
+
+    %% 리뷰 이미지 관리
+    REVIEW_IMAGES {
+        int id PK
+        int review_id FK
+        string image_url "NOT NULL"
+        int image_order "DEFAULT 1"
+        datetime created_at
     }
 
     %% 미션 관리
@@ -200,6 +208,7 @@ erDiagram
 
     ORDERS ||--o{ ORDER_ITEMS : ""
     ORDERS ||--|| REVIEWS : ""
+    REVIEWS ||--o{ REVIEW_IMAGES : ""
 
     MENU_ITEMS ||--o{ ORDER_ITEMS : ""
 
@@ -237,7 +246,8 @@ erDiagram
 ### 4. 리뷰 시스템
 
 - **주문 기반** 리뷰 (1:1 관계)
-- **이미지 리뷰** 지원 (JSON 배열)
+- **다중 이미지** 지원 (별도 테이블로 정규화)
+- **이미지 순서** 관리 가능
 - **공개/비공개** 설정 가능
 
 ### 5. 미션 시스템 (핵심 기능 - IA 7일 미션)
@@ -274,7 +284,7 @@ erDiagram
 
 ### ✅ Week0 미션 수준에 적합
 
-- **11개 핵심 테이블**로 모든 기능 구현 가능
+- **12개 핵심 테이블**로 모든 기능 구현 가능
 - **과도한 최적화 없이** 기능 중심 설계
 - **깔끔한 관계선**으로 가독성 확보
 
@@ -287,5 +297,6 @@ erDiagram
 
 ### 사용자 경험 개선
 - **소셜 로그인 지원**: 휴대폰 번호 선택적 입력 (NULL 허용)
+- **다중 이미지 리뷰**: 리뷰당 여러 이미지 업로드 및 순서 관리
 - **실시간 반영**: 미션 참여/리뷰 작성 즉시 화면 업데이트
 - **정확한 정보**: 계산된 값들의 실시간 정확성 보장

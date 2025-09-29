@@ -124,10 +124,18 @@ CREATE TABLE reviews (
     order_id BIGINT UNIQUE REFERENCES orders(id) ON DELETE CASCADE,
     rating DECIMAL(2, 1) NOT NULL CHECK (rating >= 1.0 AND rating <= 5.0),
     content TEXT,
-    image_urls JSONB,
     is_public BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 리뷰 이미지 관리 테이블 (reviews 참조)
+CREATE TABLE review_images (
+    id BIGSERIAL PRIMARY KEY,
+    review_id BIGINT REFERENCES reviews(id) ON DELETE CASCADE,
+    image_url VARCHAR(255) NOT NULL,
+    image_order INTEGER DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 미션 관리 테이블 (stores 참조)
@@ -203,6 +211,9 @@ CREATE INDEX idx_user_missions_user_status ON user_missions(user_id, status);
 
 -- 가게별 리뷰 조회 최적화
 CREATE INDEX idx_reviews_store_rating ON reviews(store_id, rating);
+
+-- 리뷰 이미지 조회 최적화
+CREATE INDEX idx_review_images_review_order ON review_images(review_id, image_order);
 
 -- 가게별 미션 조회 최적화
 CREATE INDEX idx_missions_store_status ON missions(store_id, status);
