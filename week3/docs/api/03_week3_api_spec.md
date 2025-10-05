@@ -70,24 +70,25 @@ POST /api/users/signup
 **Request Body**
 ```json
 {
-  "email": "user@example.com",
-  "password": "securePassword123!",
   "name": "김UMC",
-  "phone": "01012345678",
+  "gender": "male",
+  "birthDate": "1999-03-15",
   "address": "서울시 강남구",
-  "userType": "normal"
+  "foodPreferences": ["한식", "일식", "치킨", "디저트"]
 }
 ```
 
 **Request Body 필드**
 | 필드 | 타입 | 필수 | 설명 |
 |------|------|------|------|
-| email | string | O | 이메일 (UNIQUE) |
-| password | string | O | 비밀번호 (8자 이상) |
 | name | string | O | 이름 |
-| phone | string | X | 휴대폰 번호 (소셜 로그인 시 NULL 가능) |
-| address | string | X | 주소 |
-| userType | enum | O | 회원 타입 (normal, business) |
+| gender | enum | O | 성별 (male, female, none) |
+| birthDate | string | O | 생년월일 (YYYY-MM-DD) |
+| address | string | O | 주소 |
+| foodPreferences | array | O | 선호 음식 종류 배열 (최소 1개) |
+
+**선호 음식 종류 옵션**
+- `한식`, `일식`, `중식`, `양식`, `치킨`, `분식`, `고기/구이`, `도시락`, `야식`, `패스트푸드`, `디저트`, `아시안푸드`
 
 **Response (201 Created)**
 ```json
@@ -96,10 +97,12 @@ POST /api/users/signup
   "message": "회원가입이 완료되었습니다.",
   "data": {
     "userId": 123,
-    "email": "user@example.com",
     "name": "김UMC",
-    "userType": "normal",
-    "createdAt": "2025-10-05T21:30:00"
+    "gender": "male",
+    "birthDate": "1999-03-15",
+    "address": "서울시 강남구",
+    "foodPreferences": ["한식", "일식", "치킨", "디저트"],
+    "createdAt": "2025-10-05T22:30:00"
   }
 }
 ```
@@ -109,9 +112,9 @@ POST /api/users/signup
 {
   "success": false,
   "error": {
-    "code": "DUPLICATE_EMAIL",
-    "message": "이미 존재하는 이메일입니다.",
-    "field": "email"
+    "code": "INVALID_FOOD_PREFERENCE",
+    "message": "최소 1개 이상의 음식 종류를 선택해주세요.",
+    "field": "foodPreferences"
   }
 }
 ```
