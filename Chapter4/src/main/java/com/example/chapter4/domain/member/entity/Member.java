@@ -1,0 +1,59 @@
+package com.example.chapter4.domain.member.entity;
+
+import java.time.LocalDate;
+
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import com.example.chapter4.domain.member.enums.Gender;
+import com.example.chapter4.global.entity.BaseEntity;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+@Table(name = "member")
+@EntityListeners(AuditingEntityListener.class)
+public class Member extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "name", length = 3, nullable = false)
+    private String name;
+
+    @Column(name = "gender", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private Gender gender = Gender.NONE;
+
+    @Column(name = "birth", nullable = false)
+    private LocalDate birth;
+
+    // Base Entity 사용
+    // @CreatedDate
+    // @Column(name = "created_at", nullable = false)
+    // private LocalDateTime createdAt;
+
+    // @LastModifiedDate
+    // @Column(name = "updated_at", nullable = false)
+    // private LocalDateTime updatedAt;
+
+}
