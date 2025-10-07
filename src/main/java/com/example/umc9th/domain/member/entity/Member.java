@@ -1,11 +1,11 @@
-package com.example.chapter4.domain.member.entity;
+package com.example.umc9th.domain.member.entity;
 
 import java.time.LocalDate;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import com.example.chapter4.domain.member.enums.Gender;
-import com.example.chapter4.global.entity.BaseEntity;
+import com.example.umc9th.domain.member.enums.Gender;
+import com.example.umc9th.global.entity.BaseEntity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;

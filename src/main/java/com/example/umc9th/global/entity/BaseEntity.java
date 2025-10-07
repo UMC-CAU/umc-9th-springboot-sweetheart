@@ -1,4 +1,4 @@
-package com.example.chapter4.global.entity;
+package com.example.umc9th.global.entity;
 
 import java.time.LocalDateTime;
 

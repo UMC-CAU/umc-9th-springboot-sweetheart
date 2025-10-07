@@ -1,6 +1,6 @@
-package com.example.chapter4.domain.member.entity;
+package com.example.umc9th.domain.member.entity;
 
-import com.example.chapter4.domain.member.enums.FoodName;
+import com.example.umc9th.domain.member.enums.FoodName;
 import jakarta.persistence.*;
 import lombok.*;
 
