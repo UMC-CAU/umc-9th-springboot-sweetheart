@@ -1,5 +1,5 @@
 package com.example.umc9th.domain.member.enums;
 
-public class FoodName {
-  
+public enum FoodName {
+    KOREAN,CHINESE,JAPANESE,WESTERN,ETC;
 }
