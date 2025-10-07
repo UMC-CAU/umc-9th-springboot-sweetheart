@@ -1,10 +1,10 @@
 spring:
   application:
-    name: "Chapter4" # "umc9th"
+    name: "umc9th" # "umc9th"
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver # MySQL JDBC ???? ??? ??
-    url: ${DB_URL} # jdbc:mysql://localhost:3306/{???????}
+    url: ${DB_URL} # jdbc:mysql://localhost:3306/umc9th
     username: ${DB_USER} # MySQL ?? ??
     password: ${DB_PW} # MySQL ????
 
