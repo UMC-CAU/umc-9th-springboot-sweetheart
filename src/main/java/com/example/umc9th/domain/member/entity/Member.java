@@ -1,9 +1,12 @@
 package com.example.umc9th.domain.member.entity;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.example.umc9th.domain.member.entity.mapping.MemberFood;
 import com.example.umc9th.domain.member.enums.Gender;
 import com.example.umc9th.global.entity.BaseEntity;
 
@@ -16,6 +19,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Column;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.FetchType;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -46,6 +51,11 @@ public class Member extends BaseEntity {
 
     @Column(name = "birth", nullable = false)
     private LocalDate birth;
+
+    // 양방향 관계: Member가 선호하는 음식 목록
+    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<MemberFood> memberFoodList = new ArrayList<>();
 
     // Base Entity 사용
     // @CreatedDate
