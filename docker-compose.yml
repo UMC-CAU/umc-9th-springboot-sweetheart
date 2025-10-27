@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: umc-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: umc9th
+      MYSQL_USER: ${DB_USER:-umc_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-umc_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - umc-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: umc-backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      # Spring 프로필
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+
+      # 데이터베이스 연결
+      DB_URL: jdbc:mysql://mysql:3306/umc9th?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USER: ${DB_USER:-umc_user}
+      DB_PASSWORD: ${DB_PASSWORD:-umc_password}
+
+      # JPA 설정
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${DDL_AUTO:-update}
+      SPRING_JPA_SHOW_SQL: ${SHOW_SQL:-true}
+
+      # JVM 메모리 설정
+      JAVA_OPTS: -Xms512m -Xmx1024m
+    ports:
+      - "8080:8080"
+    networks:
+      - umc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+    driver: local
+
+networks:
+  umc-network:
+    driver: bridge
