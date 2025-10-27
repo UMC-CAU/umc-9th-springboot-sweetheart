@@ -1,13 +1,17 @@
 package com.example.umc9th.domain.member.entity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.example.umc9th.domain.member.entity.mapping.MemberFood;
+import com.example.umc9th.domain.member.entity.mapping.MemberTerm;
 import com.example.umc9th.domain.member.enums.Gender;
+import com.example.umc9th.domain.store.enums.Address;
+import com.example.umc9th.global.auth.enums.SocialType;
 import com.example.umc9th.global.entity.BaseEntity;
 
 import jakarta.persistence.Entity;
@@ -41,7 +45,7 @@ public class Member extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", length = 3, nullable = false)
+    @Column(name = "name", length = 50, nullable = false)
     private String name;
 
     @Column(name = "gender", nullable = false)
@@ -52,10 +56,41 @@ public class Member extends BaseEntity {
     @Column(name = "birth", nullable = false)
     private LocalDate birth;
 
+    @Column(name = "address", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Address address;
+
+    @Column(name = "detail_address", nullable = false)
+    private String detailAddress;
+
+    @Column(name = "social_uid", nullable = false)
+    private String socialUid;
+
+    @Column(name = "social_type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private SocialType socialType;
+
+    @Column(name = "point", nullable = false)
+    private Integer point;
+
+    @Column(name = "email", nullable = false)
+    private String email;
+
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     // 양방향 관계: Member가 선호하는 음식 목록
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
     @Builder.Default
     private List<MemberFood> memberFoodList = new ArrayList<>();
+
+    // 양방향 관계: Member가 동의한 약관 목록
+    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<MemberTerm> memberTermList = new ArrayList<>();
 
     // Base Entity 사용
     // @CreatedDate
