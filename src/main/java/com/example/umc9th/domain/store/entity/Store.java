@@ -1,6 +1,7 @@
 package com.example.umc9th.domain.store.entity;
 
 import com.example.umc9th.domain.location.entity.Location;
+import com.example.umc9th.domain.member.entity.Food;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,4 +30,8 @@ public class Store {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id", nullable = false)
     private Location location;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "food_id", nullable = false)
+    private Food food;
 }

@@ -2,6 +2,7 @@ package com.example.umc9th.domain.mission.entity.mapping;
 
 import com.example.umc9th.domain.member.entity.Member;
 import com.example.umc9th.domain.mission.entity.Mission;
+import com.example.umc9th.domain.mission.enums.MissionStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,9 +19,10 @@ public class MemberMission {
     @Column(name = "member_mission_id")
     private Long id;
 
-    @Column(name = "is_complete", nullable = false)
+    @Column(name = "status", nullable = false)
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    private Boolean isComplete = false;
+    private MissionStatus status = MissionStatus.AVAILABLE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
