@@ -5,10 +5,10 @@ services:
     image: mysql:8.0
     container_name: umc-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
       MYSQL_DATABASE: umc9th
-      MYSQL_USER: ${DB_USER:-umc_user}
-      MYSQL_PASSWORD: ${DB_PW:-password}
+      MYSQL_USER: ${DB_USER:?DB_USER is required}
+      MYSQL_PASSWORD: ${DB_PW:?DB_PW is required}
     ports:
       - "3306:3306"
     volumes:
@@ -35,8 +35,8 @@ services:
 
       # 데이터베이스 연결
       DB_URL: jdbc:mysql://mysql:3306/umc9th?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
-      DB_USER: ${DB_USER:-umc_user}
-      DB_PW: ${DB_PW:-password}
+      DB_USER: ${DB_USER:?DB_USER is required}
+      DB_PW: ${DB_PW:?DB_PW is required}
 
       # JPA 설정
       SPRING_JPA_HIBERNATE_DDL_AUTO: ${DDL_AUTO:-update}
