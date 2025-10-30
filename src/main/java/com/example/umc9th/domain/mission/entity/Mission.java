@@ -23,6 +23,9 @@ public class Mission {
     @Column(name = "mission_id")
     private Long id;
 
+    @Column(name = "name", nullable = false)
+    private String name;
+
     @Column(name = "deadline", nullable = false)
     private LocalDate deadline;
 
