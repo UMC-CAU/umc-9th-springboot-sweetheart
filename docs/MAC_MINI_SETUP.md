@@ -351,14 +351,21 @@ nano .env
 다음 내용 입력:
 
 ```env
-# MySQL 설정
-DB_URL=jdbc:mysql://mysql:3306/umc9th
+# Database Configuration
+# Note: DB_URL은 docker-compose.yml에 하드코딩되어 있음
+DB_ROOT_PASSWORD=root123
 DB_USER=umc_user
-DB_PW=your_secure_password
+DB_PW=user123
 
-# 스프링 프로필
+# Spring Configuration
 SPRING_PROFILES_ACTIVE=prod
+DDL_AUTO=update
+SHOW_SQL=true
 ```
+
+**중요:**
+- `DB_URL`은 docker-compose.yml에서 `jdbc:mysql://mysql:3306/umc9th`로 설정되어 있어 .env에 넣지 않아도 됩니다
+- 비밀번호는 간단하게 설정 (로컬 네트워크만 사용, MySQL은 외부 노출 안 됨)
 
 ```bash
 # 파일 권한 설정 (중요!)
@@ -503,25 +510,63 @@ docker volume prune
 
 ## 10. 완료 체크리스트
 
-- [ ] 고정 IP 설정 완료
-- [ ] Homebrew 설치
-- [ ] Java 21 설치
-- [ ] Docker Desktop 설치
-- [ ] SSH 접속 가능
-- [ ] SSH 키 등록 완료
-- [ ] 프로젝트 클론 완료
-- [ ] Docker Compose로 실행 성공
-- [ ] Windows에서 맥미니 API 접근 가능
-- [ ] 방화벽 설정 완료
+### 기본 설정
+- [x] 고정 IP 설정 완료 (192.168.0.61)
+- [x] Homebrew 설치
+- [x] Java 21 설치
+- [x] Docker Desktop 설치
+- [x] Docker Desktop 자동 시작 설정
+- [x] SSH 접속 가능
+- [x] SSH 키 등록 완료 (비밀번호 없이 접속)
+
+### 프로젝트 설정
+- [x] Git 사용자 정보 설정
+- [x] 프로젝트 클론 완료 (~/projects/umc-9th-springboot-sweetheart)
+- [x] .env 파일 생성 및 설정
+- [x] Docker Compose로 실행 성공
+- [x] MySQL 컨테이너 정상 작동
+- [x] Spring Boot 컨테이너 정상 작동
+- [x] API Health Check 통과
+
+### 접근성 설정
+- [x] Windows에서 Mac Mini SSH 접근 가능
+- [x] Windows에서 Mac Mini API 접근 가능 (http://192.168.0.61:8080)
+- [x] Chrome Remote Desktop 설정 완료
+- [x] Mac Mini 자동 로그인 설정 완료
+
+### 배포 준비
+- [x] SSH 키 페어 생성 (github-actions-deploy)
+- [ ] GitHub Secrets 등록 (진행 중)
+- [ ] GitHub Actions 워크플로우 테스트
+- [ ] Cloudflare Tunnel 설정
 
 ---
 
 ## 다음 단계
 
-✅ 맥미니 설정 완료!
+✅ **맥미니 기본 설정 완료!**
 
-다음 문서를 참고하세요:
+### 현재 상태
+- ✅ Mac Mini 서버: `192.168.0.61`
+- ✅ Spring Boot API: `http://192.168.0.61:8080`
+- ✅ Swagger UI: `http://192.168.0.61:8080/swagger-ui.html`
+- ✅ Health Check: `http://192.168.0.61:8080/actuator/health`
 
-- `CLOUDFLARE_SETUP.md`: Cloudflare 터널로 HTTPS 도메인 연결
-- `CICD_SETUP.md`: GitHub Actions 자동 배포 설정
-- `DEPLOYMENT.md`: 전체 배포 프로세스 가이드
+### 다음으로 진행할 작업
+
+1. **GitHub Secrets 등록** (5분) ⬅️ 진행 중
+   - Mac Mini 접속 정보 안전하게 저장
+   - 자동 배포를 위한 비밀 정보 설정
+
+2. **GitHub Actions 자동 배포 테스트** (10분)
+   - `git push` → 자동 배포 확인
+   - CI/CD 파이프라인 검증
+
+3. **Cloudflare Tunnel 설정** (20분)
+   - 외부에서 HTTPS로 접속 가능
+   - `https://spring-swagger-api.log8.kr`
+
+### 참고 문서
+- `docs/CICD_SETUP.md`: GitHub Actions 자동 배포 설정
+- `docs/CLOUDFLARE_SETUP.md`: Cloudflare 터널 HTTPS 도메인 연결
+- `docs/DEPLOYMENT.md`: 전체 배포 프로세스 가이드
