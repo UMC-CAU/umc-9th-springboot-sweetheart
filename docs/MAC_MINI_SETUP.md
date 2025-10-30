@@ -1,6 +1,7 @@
 # 맥미니 초기 설정 가이드
 
 ## 목차
+
 1. [네트워크 확인 및 고정 IP 설정](#1-네트워크-확인-및-고정-ip-설정)
 2. [필수 소프트웨어 설치](#2-필수-소프트웨어-설치)
 3. [Docker 및 Docker Compose 설치](#3-docker-및-docker-compose-설치)
@@ -27,6 +28,7 @@ ipconfig getifaddr en1  # 유선 (있는 경우)
 ```
 
 출력 예시:
+
 ```
 192.168.0.123
 ```
@@ -34,6 +36,7 @@ ipconfig getifaddr en1  # 유선 (있는 경우)
 ### 1.2 고정 IP 설정 (중요!)
 
 **왜 필요한가?**
+
 - GitHub Actions가 SSH로 접속할 때 IP가 변하면 안 됨
 - Cloudflare 터널 설정 시 안정적인 연결 필요
 
@@ -118,6 +121,7 @@ java -version
 ### 3.1 Docker Desktop 설치 (추천)
 
 **방법 1: 웹사이트에서 다운로드**
+
 1. https://www.docker.com/products/docker-desktop 접속
 2. Mac (Apple Silicon 또는 Intel) 선택
 3. Docker Desktop 설치 파일 다운로드
@@ -130,6 +134,7 @@ java -version
 brew install --cask docker
 
 # Docker Desktop 실행 (Spotlight에서 "Docker" 검색 후 실행)
+open -a Docker
 ```
 
 ### 3.2 Docker 설치 확인
@@ -165,6 +170,7 @@ docker run hello-world
 ### 4.1 MySQL 설치 (Docker로 설치할 예정이므로 선택 사항)
 
 **옵션 A: Docker Compose로 MySQL 실행 (추천)**
+
 - 프로젝트의 `docker-compose.yml`에 이미 MySQL 포함
 - 별도 설치 불필요
 
@@ -376,6 +382,7 @@ docker compose ps
 ```
 
 출력 예시:
+
 ```
 NAME                COMMAND                  SERVICE             STATUS              PORTS
 umc9th-backend-1    "java -jar /app/..."     backend             running             0.0.0.0:8080->8080/tcp
@@ -400,6 +407,7 @@ curl http://192.168.0.123:8080/actuator/health
 ```
 
 브라우저에서:
+
 ```
 http://192.168.0.123:8080
 ```
@@ -513,6 +521,7 @@ docker volume prune
 ✅ 맥미니 설정 완료!
 
 다음 문서를 참고하세요:
+
 - `CLOUDFLARE_SETUP.md`: Cloudflare 터널로 HTTPS 도메인 연결
 - `CICD_SETUP.md`: GitHub Actions 자동 배포 설정
 - `DEPLOYMENT.md`: 전체 배포 프로세스 가이드
