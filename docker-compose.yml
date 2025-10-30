@@ -8,7 +8,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
       MYSQL_DATABASE: umc9th
       MYSQL_USER: ${DB_USER:-umc_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-umc_password}
+      MYSQL_PASSWORD: ${DB_PW:-password}
     ports:
       - "3306:3306"
     volumes:
@@ -34,9 +34,9 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
 
       # 데이터베이스 연결
-      DB_URL: jdbc:mysql://mysql:3306/umc9th?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_URL: jdbc:mysql://mysql:3306/umc9th?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
       DB_USER: ${DB_USER:-umc_user}
-      DB_PASSWORD: ${DB_PASSWORD:-umc_password}
+      DB_PW: ${DB_PW:-password}
 
       # JPA 설정
       SPRING_JPA_HIBERNATE_DDL_AUTO: ${DDL_AUTO:-update}
