@@ -540,7 +540,7 @@ docker volume prune
 - [x] GitHub Actions 워크플로우 파일 작성 (ci.yml, deploy.yml)
 - [x] Self-Hosted Runner 설정 완료 ✨
 - [x] 첫 자동 배포 성공 🎉
-- [ ] Cloudflare Tunnel 설정 (HTTPS 외부 접속)
+- [x] Cloudflare Tunnel 설정 완료 🎊
 
 ---
 
@@ -550,23 +550,25 @@ docker volume prune
 
 ### 현재 상태
 - ✅ Mac Mini 서버: `192.168.0.61`
-- ✅ Spring Boot API: `http://192.168.0.61:8080`
-- ✅ Swagger UI: `http://192.168.0.61:8080/swagger-ui.html`
-- ✅ Health Check: `http://192.168.0.61:8080/actuator/health`
+- ✅ Spring Boot API (로컬): `http://192.168.0.61:8080`
+- ✅ Spring Boot API (외부): `https://spring-swagger-api.log8.kr` 🌐
+- ✅ Swagger UI: `https://spring-swagger-api.log8.kr/swagger-ui.html`
+- ✅ Health Check: `https://spring-swagger-api.log8.kr/actuator/health`
 - ✅ Self-Hosted Runner: 실행 중 (자동 배포 완료)
-- ⏳ Cloudflare Tunnel: 설정 필요 (외부 HTTPS 접속용)
+- ✅ Cloudflare Tunnel: 실행 중 (HTTPS 외부 접속 가능)
 
-### 다음으로 진행할 작업
+### 🎉 모든 설정 완료!
 
-**1. Cloudflare Tunnel 설정** (10분, 필수)
-- 외부에서 `https://spring-swagger-api.log8.kr`로 API 접근
-- HTTPS 자동 인증서, DDoS 보호
-- 참고: `docs/CLOUDFLARE_SETUP.md`
+**완성된 기능:**
+1. ✅ `git push origin main` → 자동 빌드 & 배포
+2. ✅ 전 세계 어디서나 HTTPS로 API 접근
+3. ✅ 맥미니 재부팅해도 자동 시작
+4. ✅ Docker + MySQL 자동 관리
 
-**2. Zero Trust Access Policy** (선택, 보안 강화)
-- 특정 이메일만 API 접근 허용
-- 인증 없는 무단 접근 차단
-- Cloudflare Dashboard에서 설정
+**선택 사항 (나중에 추가 가능):**
+- Zero Trust Access Policy (보안 강화)
+- 슬랙 알림 (배포 성공/실패 알림)
+- 모니터링 대시보드 (Grafana)
 
 ### 참고 문서
 - `docs/CICD_SETUP.md`: GitHub Actions 자동 배포 설정
