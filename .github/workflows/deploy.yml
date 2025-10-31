@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
@@ -27,42 +27,37 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Deploy to Mac Mini
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.MAC_MINI_HOST }}
-          username: ${{ secrets.MAC_MINI_USER }}
-          key: ${{ secrets.MAC_MINI_SSH_KEY }}
-          script: |
-            cd ~/projects/umc-9th-springboot-sweetheart
+        run: |
+          cd ~/projects/umc-9th-springboot-sweetheart
 
-            echo "📥 Pulling latest code..."
-            git pull origin main
+          echo "📥 Pulling latest code..."
+          git pull origin main
 
-            echo "🐳 Rebuilding Docker containers..."
-            docker compose down
-            docker compose up --build -d
+          echo "🐳 Rebuilding Docker containers..."
+          docker compose down
+          docker compose up --build -d
 
-            echo "⏳ Waiting for services to start..."
-            sleep 10
+          echo "⏳ Waiting for services to start..."
+          sleep 10
 
-            echo "✅ Checking service health..."
-            docker compose ps
+          echo "✅ Checking service health..."
+          docker compose ps
 
-            # Health check
-            if curl -f http://localhost:8080/actuator/health; then
-              echo "✅ Deployment successful!"
-            else
-              echo "❌ Deployment failed - health check failed"
-              docker compose logs backend
-              exit 1
-            fi
+          # Health check
+          if curl -f http://localhost:8080/actuator/health; then
+            echo "✅ Deployment successful!"
+          else
+            echo "❌ Deployment failed - health check failed"
+            docker compose logs backend
+            exit 1
+          fi
 
       - name: Notify deployment status
         if: always()
