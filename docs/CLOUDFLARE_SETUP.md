@@ -4,6 +4,11 @@
 
 `https://spring-swagger-api.log8.kr` 서브도메인으로 맥미니의 Spring Boot API를 HTTPS로 안전하게 노출
 
+**⚠️ 중요:** 이 문서는 **외부 사용자가 API에 HTTPS로 접근**하기 위한 설정입니다. GitHub Actions 자동 배포와는 별도입니다.
+
+- **Cloudflare Tunnel (이 문서)**: 외부 사용자 → HTTPS → 맥미니 API
+- **Self-Hosted Runner ([CICD_SETUP.md](CICD_SETUP.md) 참고)**: GitHub Actions → 맥미니 자동 배포
+
 ## 목차
 
 1. [Cloudflare Tunnel 개요](#1-cloudflare-tunnel-개요)
@@ -17,6 +22,10 @@
 ---
 
 ## 1. Cloudflare Tunnel 개요
+
+**⭐ 이 설정의 목적:**
+- 외부 사용자(클라이언트)가 `https://spring-swagger-api.log8.kr`로 API에 접속할 수 있게 함
+- GitHub Actions 배포와는 무관 (배포는 Self-Hosted Runner 사용)
 
 ### 1.1 왜 Cloudflare Tunnel을 사용하는가?
 

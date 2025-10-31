@@ -10,19 +10,149 @@
 
 ## 목차
 
-1. [CI/CD 파이프라인 개요](#1-cicd-파이프라인-개요)
-2. [GitHub Secrets 설정](#2-github-secrets-설정)
-3. [GitHub Actions 워크플로우 설명](#3-github-actions-워크플로우-설명)
-4. [배포 스크립트 작성](#4-배포-스크립트-작성)
-5. [첫 배포 테스트](#5-첫-배포-테스트)
-6. [슬랙 알림 추가 (선택)](#6-슬랙-알림-추가-선택)
-7. [트러블슈팅](#7-트러블슈팅)
+1. [배포 방법 선택](#1-배포-방법-선택) ⭐ 중요!
+2. [Self-Hosted Runner 설정 (추천)](#2-self-hosted-runner-설정-추천)
+3. [SSH 배포 방식 (문제 발생)](#3-ssh-배포-방식-문제-발생)
+4. [CI/CD 파이프라인 개요 (참고)](#4-cicd-파이프라인-개요-참고)
+5. [GitHub Secrets 설정 (참고)](#5-github-secrets-설정-참고)
+6. [GitHub Actions 워크플로우 설명 (참고)](#6-github-actions-워크플로우-설명-참고)
+7. [배포 스크립트 작성 (선택 사항)](#7-배포-스크립트-작성-선택-사항)
+8. [첫 배포 테스트](#8-첫-배포-테스트)
+9. [슬랙 알림 추가 (선택)](#9-슬랙-알림-추가-선택)
+10. [트러블슈팅](#10-트러블슈팅)
+11. [완료 체크리스트](#11-완료-체크리스트)
+12. [배포 프로세스 요약](#12-배포-프로세스-요약)
 
 ---
 
-## 1. CI/CD 파이프라인 개요
+## 1. 배포 방법 선택
 
-### 1.1 전체 워크플로우
+### ⚠️ 현재 문제
+Mac Mini는 로컬 네트워크(192.168.0.61) 안에만 있어서, GitHub Actions(클라우드)에서 직접 SSH 접속 불가능합니다.
+
+```
+❌ SSH 배포 실패 원인:
+GitHub Actions (클라우드)
+    ↓ SSH 시도
+인터넷
+    ↓
+집 공유기
+    ↓ 차단! (외부→내부 접속 불가)
+Mac Mini (로컬 네트워크)
+```
+
+### 해결 방법 비교
+
+| 방법 | 난이도 | 속도 | 보안 | 추천도 |
+|------|--------|------|------|--------|
+| **Self-Hosted Runner** | ⭐ 쉬움 | ⚡ 빠름 | 🔒 안전 | ⭐⭐⭐ |
+| Cloudflare SSH Tunnel | ⭐⭐ 보통 | 🐢 보통 | 🔒 안전 | ⭐⭐ |
+| 포트 포워딩 | ⭐ 쉬움 | ⚡ 빠름 | ⚠️ 위험 | ❌ 비추천 |
+
+### 🎯 추천: Self-Hosted Runner
+
+**장점:**
+- ✅ 설정 5분이면 끝
+- ✅ SSH 필요 없음 (로컬에서 실행)
+- ✅ 가장 빠름
+- ✅ 가장 안전
+
+**단점:**
+- Mac Mini가 꺼지면 배포 안 됨 (어차피 서버는 항상 켜져 있어야 함)
+
+---
+
+## 2. Self-Hosted Runner 설정 (추천)
+
+### 2.1 GitHub에서 Runner 등록
+
+1. **GitHub 저장소** 이동
+   ```
+   https://github.com/UMC-CAU/umc-9th-springboot-sweetheart
+   ```
+
+2. **Settings** → **Actions** → **Runners** 클릭
+
+3. **New self-hosted runner** 클릭
+
+4. **Runner image:** macOS 선택
+
+5. **명령어가 표시됨** (복사하지 말고 다음 단계로)
+
+### 2.2 Mac Mini에서 Runner 설치
+
+**SSH로 Mac Mini 접속:**
+```bash
+ssh sweetheart@192.168.0.61
+```
+
+**Runner 다운로드 및 설정:**
+```bash
+# 홈 디렉토리에 actions-runner 폴더 생성
+mkdir -p ~/actions-runner && cd ~/actions-runner
+
+# Runner 다운로드 (Apple Silicon)
+curl -o actions-runner-osx-arm64-2.321.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-osx-arm64-2.321.0.tar.gz
+
+# 압축 해제
+tar xzf ./actions-runner-osx-arm64-2.321.0.tar.gz
+
+# Runner 설정
+./config.sh --url https://github.com/UMC-CAU/umc-9th-springboot-sweetheart --token [GITHUB에서_제공한_토큰]
+```
+
+**설정 중 질문:**
+- Runner group: **Enter** (기본값)
+- Runner name: `mac-mini-runner` (또는 원하는 이름)
+- Work folder: **Enter** (기본값: _work)
+- Labels: **Enter** (기본값)
+
+### 2.3 Runner 서비스로 등록 (자동 시작)
+
+```bash
+# Runner를 서비스로 설치
+./svc.sh install
+
+# 서비스 시작
+./svc.sh start
+
+# 상태 확인
+./svc.sh status
+```
+
+### 2.4 deploy.yml 수정
+
+Self-Hosted Runner용으로 수정 필요!
+
+**파일 업데이트 필요:**
+- `deploy.yml`을 Self-Hosted Runner용으로 수정 후 사용
+
+---
+
+## 3. SSH 배포 방식 (문제 발생)
+
+### ⚠️ 현재 상태: SSH 타임아웃 에러
+
+GitHub Actions(클라우드)에서 맥미니(로컬 네트워크)로 SSH 접속 시도 시 타임아웃 발생:
+
+```
+Error: dial tcp ***:22: i/o timeout
+```
+
+**원인:** 맥미니가 로컬 네트워크(192.168.0.61)에만 있어서 GitHub Actions 클라우드 서버에서 접근 불가
+
+**해결 방법:**
+1. ⭐ **Self-Hosted Runner 사용** (섹션 2 참고) - 추천!
+2. Cloudflare Tunnel for SSH (복잡함, 비추천)
+3. 포트 포워딩 (보안 위험, 비추천)
+
+아래 내용은 SSH 배포가 정상 작동할 때를 위한 참고 자료입니다.
+
+---
+
+## 4. CI/CD 파이프라인 개요 (참고)
+
+### 4.1 전체 워크플로우
 
 ```
 [개발자] git push origin main
@@ -52,7 +182,7 @@
 [슬랙 알림] (선택)
 ```
 
-### 1.2 파일 구조
+### 4.2 파일 구조
 
 ```
 umc-9th-springboot-sweetheart/
@@ -69,9 +199,9 @@ umc-9th-springboot-sweetheart/
 
 ---
 
-## 2. GitHub Secrets 설정
+## 5. GitHub Secrets 설정 (참고)
 
-### 2.1 SSH 키 생성 (Windows 데스크톱에서)
+### 5.1 SSH 키 생성 (Windows 데스크톱에서)
 
 **이미 SSH 키가 있다면 스킵**
 
@@ -92,7 +222,7 @@ cat ~/.ssh/mac_mini_deploy.pub
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx github-actions
 ```
 
-### 2.2 맥미니에 공개 키 등록
+### 5.2 맥미니에 공개 키 등록
 
 **맥미니 터미널에서:**
 
@@ -117,16 +247,16 @@ ssh -i ~/.ssh/mac_mini_deploy your-username@192.168.0.123
 # 비밀번호 없이 접속되면 성공!
 ```
 
-### 2.3 GitHub Secrets 등록
+### 5.3 GitHub Secrets 등록
 
-#### 2.3.1 GitHub 저장소 설정 페이지로 이동
+#### 5.3.1 GitHub 저장소 설정 페이지로 이동
 
 1. https://github.com/your-username/umc-9th-springboot-sweetheart
 2. **Settings** 탭 클릭
 3. 좌측 메뉴에서 **Secrets and variables** → **Actions** 클릭
 4. **New repository secret** 버튼 클릭
 
-#### 2.3.2 필수 Secrets 등록
+#### 5.3.2 필수 Secrets 등록
 
 ##### **MAC_MINI_HOST**
 
@@ -181,7 +311,7 @@ Value: your_mysql_password
 
 GitHub Actions 워크플로우에서 환경 변수로 사용할 수 있습니다.
 
-#### 2.3.3 Secrets 확인
+#### 5.3.3 Secrets 확인
 
 등록 후 다음과 같이 표시됨:
 
@@ -196,9 +326,9 @@ DB_PASSWORD           Updated now
 
 ---
 
-## 3. GitHub Actions 워크플로우 설명
+## 6. GitHub Actions 워크플로우 설명 (참고)
 
-### 3.1 CI 워크플로우 (`.github/workflows/ci.yml`)
+### 6.1 CI 워크플로우 (`.github/workflows/ci.yml`)
 
 **용도:** Pull Request에서 테스트만 실행 (배포 안 함)
 
@@ -241,7 +371,7 @@ on:
     path: build/reports/tests/
 ```
 
-### 3.2 CD 워크플로우 (`.github/workflows/deploy.yml`)
+### 6.2 CD 워크플로우 (`.github/workflows/deploy.yml`)
 
 **용도:** `main` 브랜치에 푸시하면 자동 배포
 
@@ -295,9 +425,9 @@ fi
 
 ---
 
-## 4. 배포 스크립트 작성 (선택 사항)
+## 7. 배포 스크립트 작성 (선택 사항)
 
-### 4.1 deploy.sh 스크립트 생성 (맥미니에서)
+### 7.1 deploy.sh 스크립트 생성 (맥미니에서)
 
 복잡한 배포 로직을 별도 스크립트로 분리:
 
@@ -371,7 +501,7 @@ exit 1
 chmod +x ~/projects/umc-9th-springboot-sweetheart/scripts/deploy.sh
 ```
 
-### 4.2 GitHub Actions에서 스크립트 사용
+### 7.2 GitHub Actions에서 스크립트 사용
 
 `deploy.yml` 수정:
 
@@ -391,9 +521,9 @@ chmod +x ~/projects/umc-9th-springboot-sweetheart/scripts/deploy.sh
 
 ---
 
-## 5. 첫 배포 테스트
+## 8. 첫 배포 테스트
 
-### 5.1 로컬에서 변경 사항 커밋
+### 8.1 로컬에서 변경 사항 커밋
 
 **Windows 데스크톱 터미널에서:**
 
@@ -408,7 +538,7 @@ git commit -m "feat: Add GitHub Actions CI/CD pipeline"
 git push origin main
 ```
 
-### 5.2 GitHub Actions 모니터링
+### 8.2 GitHub Actions 모니터링
 
 1. https://github.com/your-username/umc-9th-springboot-sweetheart/actions
 2. 방금 푸시한 커밋에 대한 워크플로우 실행 확인
@@ -432,7 +562,7 @@ git push origin main
     - ✅ Deployment successful!
 ```
 
-### 5.3 배포 확인
+### 8.3 배포 확인
 
 **브라우저에서:**
 ```
@@ -449,7 +579,7 @@ curl https://spring-swagger-api.log8.kr/actuator/health
 {"status":"UP"}
 ```
 
-### 5.4 배포 로그 확인 (맥미니)
+### 8.4 배포 로그 확인 (맥미니)
 
 ```bash
 # 맥미니에서
@@ -464,9 +594,9 @@ docker compose logs backend
 
 ---
 
-## 6. 슬랙 알림 추가 (선택)
+## 9. 슬랙 알림 추가 (선택)
 
-### 6.1 Slack Webhook URL 생성
+### 9.1 Slack Webhook URL 생성
 
 1. Slack 워크스페이스에서 **Apps** → **Incoming Webhooks** 검색
 2. **Add to Slack** 클릭
@@ -477,14 +607,14 @@ docker compose logs backend
 https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX
 ```
 
-### 6.2 GitHub Secret 등록
+### 9.2 GitHub Secret 등록
 
 ```
 Name: SLACK_WEBHOOK_URL
 Value: (위에서 복사한 Webhook URL)
 ```
 
-### 6.3 deploy.yml에 슬랙 알림 추가
+### 9.3 deploy.yml에 슬랙 알림 추가
 
 ```yaml
 jobs:
@@ -570,9 +700,9 @@ jobs:
 
 ---
 
-## 7. 트러블슈팅
+## 10. 트러블슈팅
 
-### 7.1 SSH 연결 실패
+### 10.1 SSH 연결 실패 (타임아웃)
 
 **에러 메시지:**
 ```
@@ -600,7 +730,7 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 ssh -i ~/.ssh/mac_mini_deploy your-username@192.168.0.123
 ```
 
-### 7.2 Permission denied (publickey)
+### 10.2 Permission denied (publickey)
 
 **에러 메시지:**
 ```
@@ -628,7 +758,7 @@ chmod 700 ~/.ssh
 chmod 600 ~/.ssh/authorized_keys
 ```
 
-### 7.3 Health check failed
+### 10.3 Health check failed
 
 **에러 메시지:**
 ```
@@ -656,7 +786,7 @@ docker compose logs mysql
 lsof -i :8080
 ```
 
-### 7.4 Git pull 실패
+### 10.4 Git pull 실패
 
 **에러 메시지:**
 ```
@@ -682,7 +812,7 @@ git reset --hard origin/main
 ./scripts/deploy.sh
 ```
 
-### 7.5 Docker build 실패
+### 10.5 Docker build 실패
 
 **에러 메시지:**
 ```
@@ -709,22 +839,31 @@ docker compose build backend
 
 ---
 
-## 8. 완료 체크리스트
+## 11. 완료 체크리스트
 
-- [ ] SSH 키 생성 및 맥미니에 등록
-- [ ] GitHub Secrets 등록 완료
-- [ ] `.github/workflows/ci.yml` 작성
-- [ ] `.github/workflows/deploy.yml` 작성
-- [ ] `scripts/deploy.sh` 작성 (선택)
-- [ ] 첫 배포 테스트 성공
-- [ ] Health check 통과
-- [ ] HTTPS 접속 확인
+### Self-Hosted Runner 방식 (추천)
+- [x] GitHub에서 Runner 등록
+- [x] 맥미니에 Runner 설치 및 설정
+- [x] Runner 서비스로 등록 (자동 시작)
+- [x] deploy.yml을 Self-Hosted Runner용으로 수정
+- [x] 첫 배포 테스트 성공 🎉
+- [x] Health check 통과
+
+### SSH 방식 (참고, 현재 타임아웃 발생 중)
+- [x] SSH 키 생성 및 맥미니에 등록
+- [x] GitHub Secrets 등록 완료
+- [x] `.github/workflows/ci.yml` 작성
+- [x] `.github/workflows/deploy.yml` 작성
+- [ ] SSH 타임아웃 문제 해결 필요
+
+### 공통
+- [ ] Cloudflare Tunnel 설정 (HTTPS 외부 접속용) - 다음 단계!
 - [ ] 슬랙 알림 설정 (선택)
-- [ ] 배포 로그 확인
+- [x] 배포 로그 확인
 
 ---
 
-## 9. 배포 프로세스 요약
+## 12. 배포 프로세스 요약
 
 ### 개발 워크플로우
 

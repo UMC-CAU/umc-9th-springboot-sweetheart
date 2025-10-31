@@ -536,9 +536,11 @@ docker volume prune
 
 ### 배포 준비
 - [x] SSH 키 페어 생성 (github-actions-deploy)
-- [ ] GitHub Secrets 등록 (진행 중)
-- [ ] GitHub Actions 워크플로우 테스트
-- [ ] Cloudflare Tunnel 설정
+- [x] GitHub Secrets 등록 완료
+- [x] GitHub Actions 워크플로우 파일 작성 (ci.yml, deploy.yml)
+- [x] Self-Hosted Runner 설정 완료 ✨
+- [x] 첫 자동 배포 성공 🎉
+- [ ] Cloudflare Tunnel 설정 (HTTPS 외부 접속)
 
 ---
 
@@ -551,20 +553,20 @@ docker volume prune
 - ✅ Spring Boot API: `http://192.168.0.61:8080`
 - ✅ Swagger UI: `http://192.168.0.61:8080/swagger-ui.html`
 - ✅ Health Check: `http://192.168.0.61:8080/actuator/health`
+- ✅ Self-Hosted Runner: 실행 중 (자동 배포 완료)
+- ⏳ Cloudflare Tunnel: 설정 필요 (외부 HTTPS 접속용)
 
 ### 다음으로 진행할 작업
 
-1. **GitHub Secrets 등록** (5분) ⬅️ 진행 중
-   - Mac Mini 접속 정보 안전하게 저장
-   - 자동 배포를 위한 비밀 정보 설정
+**1. Cloudflare Tunnel 설정** (10분, 필수)
+- 외부에서 `https://spring-swagger-api.log8.kr`로 API 접근
+- HTTPS 자동 인증서, DDoS 보호
+- 참고: `docs/CLOUDFLARE_SETUP.md`
 
-2. **GitHub Actions 자동 배포 테스트** (10분)
-   - `git push` → 자동 배포 확인
-   - CI/CD 파이프라인 검증
-
-3. **Cloudflare Tunnel 설정** (20분)
-   - 외부에서 HTTPS로 접속 가능
-   - `https://spring-swagger-api.log8.kr`
+**2. Zero Trust Access Policy** (선택, 보안 강화)
+- 특정 이메일만 API 접근 허용
+- 인증 없는 무단 접근 차단
+- Cloudflare Dashboard에서 설정
 
 ### 참고 문서
 - `docs/CICD_SETUP.md`: GitHub Actions 자동 배포 설정
