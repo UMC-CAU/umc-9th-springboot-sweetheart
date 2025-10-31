@@ -1,328 +1,182 @@
 # 전체 배포 가이드
 
-## 🎯 목표
+## 목표
 
-맥미니 + Docker + Cloudflare + GitHub Actions (Self-Hosted Runner)를 활용한 완전 자동화 배포 시스템 구축
+맥미니 + Docker + Cloudflare + GitHub Actions (Self-Hosted Runner) 완전 자동화 배포
 
 **최종 결과:**
-- 🔒 HTTPS: `https://spring-swagger-api.log8.kr`
-- 🚀 자동 배포: `git push origin main`만으로 배포 완료
-- 📊 모니터링: Swagger UI, Health Check, 로그
-
-**⚠️ 현재 상태:**
-- ✅ 맥미니 설정 완료
-- ✅ Docker + MySQL 실행 중
-- ✅ Cloudflare Tunnel 설정 완료 (HTTPS 외부 접속 가능)
-- ✅ GitHub Actions CI/CD 워크플로우 작성 완료
-- ⚠️ **SSH 배포 타임아웃 발생 중** (맥미니가 로컬 네트워크에만 있음)
-- 🔨 **해결 방법: Self-Hosted Runner 설정 필요** (CICD_SETUP.md 섹션 2 참고)
+- ✅ HTTPS 외부 접속: `https://[your-subdomain].[your-domain]`
+- ✅ 자동 배포: `git push origin main` → 자동 빌드 + 배포
+- ✅ 무료!
 
 ---
 
-## 📋 전체 아키텍처
+## 배포 아키텍처
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Development Flow                        │
-└─────────────────────────────────────────────────────────────┘
-
-[개발자] 코드 작성 → git push origin main
+[개발자 PC]
+    ↓ git push origin main
+[GitHub]
+    ↓ 워크플로우 실행
+[맥미니 - Self-Hosted Runner]
+    ├─ Build + Test
+    ├─ Docker Compose 재배포
+    │   ├─ MySQL Container
+    │   └─ Spring Boot Container (localhost:8080)
     ↓
-[GitHub] 코드 푸시 감지
-    ↓
-[Mac Mini - Self-Hosted Runner] ~/actions-runner
-    ├─ GitHub Actions 워크플로우 실행
-    ├─ Test (JUnit)
-    ├─ Build (Gradle)
-    └─ Deploy
-        ↓
-        ~/projects/umc-9th-springboot-sweetheart
-        ├─ git pull
-        ├─ docker compose up --build -d
-        │   ├─ MySQL Container (3306)
-        │   └─ Spring Boot Container (8080)
-    ↓
-[Cloudflare Tunnel] cloudflared
-    ├─ localhost:8080 → Cloudflare Edge
-    └─ HTTPS 자동 처리
-    ↓
-[사용자] https://spring-swagger-api.log8.kr
+[Cloudflare Tunnel]
+    ↓ HTTPS
+[외부 사용자] → https://[your-subdomain].[your-domain]
 ```
 
 ---
 
-## 🗂️ 문서 구조
+## 빠른 시작 (Quick Start)
 
-이 저장소에는 다음 문서들이 있습니다:
+### 준비물
 
-1. **MAC_MINI_SETUP.md** - 맥미니 초기 설정
-   - Java, Docker, MySQL 설치
-   - 네트워크 설정 (고정 IP)
-   - SSH 설정
+- Mac Mini (Apple Silicon 권장)
+- 도메인 (Cloudflare에 등록)
+- GitHub 저장소
 
-2. **CLOUDFLARE_SETUP.md** - Cloudflare 터널 설정
-   - cloudflared 설치
-   - 터널 생성 및 DNS 설정
-   - HTTPS 자동 인증서
+### 1단계: 맥미니 설정 (30분)
 
-3. **CICD_SETUP.md** - GitHub Actions CI/CD
-   - GitHub Secrets 설정
-   - 자동 테스트 및 배포
-   - 슬랙 알림
+**문서:** [MAC_MINI_SETUP.md](MAC_MINI_SETUP.md)
 
-4. **DEPLOYMENT.md** (이 문서)
-   - 전체 배포 프로세스 총정리
-   - 빠른 시작 가이드
-
----
-
-## 🚀 빠른 시작 (Quick Start)
-
-### 단계별 체크리스트
-
-#### ✅ Phase 1: 맥미니 설정 (30분)
-
-**참고 문서:** `docs/MAC_MINI_SETUP.md`
-
+**요약:**
 ```bash
-# 맥미니에서 실행
+# SSH로 맥미니 접속
+ssh [your_username]@[your_mac_mini_ip]
 
-# 1. Homebrew 설치
+# Homebrew, Java 21, Docker Desktop 설치
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# 2. Java 21 설치
 brew install openjdk@21
-
-# 3. Docker Desktop 설치
 brew install --cask docker
-# Docker Desktop 실행
 
-# 4. 고정 IP 설정
-# 시스템 설정 → 네트워크 → TCP/IP → 수동 설정
-
-# 5. SSH 활성화
-# 시스템 설정 → 공유 → 원격 로그인 활성화
-
-# 6. 프로젝트 클론
+# 프로젝트 클론
 mkdir -p ~/projects
 cd ~/projects
-git clone https://github.com/your-username/umc-9th-springboot-sweetheart.git
-cd umc-9th-springboot-sweetheart
+git clone https://github.com/[your-org]/[your-repo].git
+cd [your-repo]
 
-# 7. 환경 변수 설정
+# 환경 변수 설정
 cp .env.example .env
 nano .env  # 비밀번호 수정
 
-# 8. Docker Compose 테스트
+# Docker Compose 실행
 docker compose up -d
 curl http://localhost:8080/actuator/health
 ```
 
+**체크리스트:**
+- [ ] Java 21 설치
+- [ ] Docker Desktop 설치
+- [ ] 고정 IP 설정
+- [ ] SSH 활성화
+- [ ] 프로젝트 클론
+- [ ] .env 파일 생성
+- [ ] Docker Compose 실행 성공
+
 ---
 
-#### ✅ Phase 2: Cloudflare 터널 설정 (20분)
+### 2단계: Cloudflare Tunnel 설정 (20분)
 
-**참고 문서:** `docs/CLOUDFLARE_SETUP.md`
+**문서:** [CLOUDFLARE_SETUP.md](CLOUDFLARE_SETUP.md)
 
+**요약:**
 ```bash
-# 맥미니에서 실행
-
-# 1. cloudflared 설치
+# cloudflared 설치
 brew install cloudflare/cloudflare/cloudflared
 
-# 2. Cloudflare 로그인
+# 로그인 및 터널 생성
 cloudflared tunnel login
+cloudflared tunnel create [tunnel-name]
 
-# 3. 터널 생성
-cloudflared tunnel create mac-mini-umc
+# 설정 파일 생성 (/etc/cloudflared/config.yml)
+sudo mkdir -p /etc/cloudflared
+sudo cp ~/.cloudflared/[tunnel-id].json /etc/cloudflared/
+# config.yml 작성 (문서 참고)
 
-# 4. 설정 파일 생성
-mkdir -p ~/.cloudflared
-nano ~/.cloudflared/config.yml
+# DNS 라우팅
+cloudflared tunnel route dns [tunnel-name] [your-subdomain].[your-domain]
+
+# 자동 시작 설정 (plist 파일 생성)
+# /Library/LaunchDaemons/com.cloudflare.cloudflared.plist 생성
+sudo launchctl load /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
+
+# 테스트
+curl https://[your-subdomain].[your-domain]/actuator/health
 ```
 
-**config.yml 내용:**
-```yaml
-tunnel: mac-mini-umc
-credentials-file: /Users/your-username/.cloudflared/xxxxxxxx.json
-
-ingress:
-  - hostname: spring-swagger-api.log8.kr
-    service: http://localhost:8080
-  - service: http_status:404
-```
-
-```bash
-# 5. DNS 라우팅
-cloudflared tunnel route dns mac-mini-umc spring-swagger-api.log8.kr
-
-# 6. 터널 서비스 등록
-sudo cloudflared service install
-sudo launchctl start com.cloudflare.cloudflared
-
-# 7. 테스트
-curl https://spring-swagger-api.log8.kr/actuator/health
-```
+**체크리스트:**
+- [ ] cloudflared 설치
+- [ ] 터널 생성
+- [ ] config.yml 작성
+- [ ] DNS 라우팅 설정
+- [ ] plist 파일 생성 (ProgramArguments 완전히 작성!)
+- [ ] HTTPS 접속 성공
 
 ---
 
-#### ✅ Phase 3: GitHub Actions CI/CD 설정 (15분)
+### 3단계: GitHub Actions CI/CD 설정 (15분)
 
-**참고 문서:** `docs/CICD_SETUP.md` (섹션 1-2 참고)
+**문서:** [CICD_SETUP.md](CICD_SETUP.md)
 
-**⚠️ 현재 상태:**
-- SSH 배포 방식은 타임아웃 발생 (맥미니가 로컬 네트워크에만 있음)
-- **Self-Hosted Runner 설정 필요** (5분이면 완료)
+**요약:**
 
-**1. GitHub에서 Runner 등록**
-
+**1) GitHub에서 Runner 등록**
 1. GitHub 저장소 → Settings → Actions → Runners
-2. New self-hosted runner 클릭
-3. macOS 선택
-4. 표시되는 토큰 복사
+2. New self-hosted runner → macOS 선택
+3. 토큰 복사
 
-**2. 맥미니에 Runner 설치**
-
+**2) 맥미니에 Runner 설치**
 ```bash
-# 맥미니 SSH 접속
-ssh sweetheart@192.168.0.61
-
-# Runner 다운로드 및 설치
+# 맥미니에서
 mkdir -p ~/actions-runner && cd ~/actions-runner
-curl -o actions-runner-osx-arm64-2.321.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-osx-arm64-2.321.0.tar.gz
+curl -o actions-runner-osx-arm64-2.321.0.tar.gz -L \
+  https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-osx-arm64-2.321.0.tar.gz
 tar xzf ./actions-runner-osx-arm64-2.321.0.tar.gz
 
-# Runner 설정 (GitHub에서 제공한 토큰 사용)
-./config.sh --url https://github.com/UMC-CAU/umc-9th-springboot-sweetheart --token [GITHUB_TOKEN]
+# Runner 설정
+./config.sh --url https://github.com/[your-org]/[your-repo] --token [YOUR_TOKEN]
 
-# 서비스로 등록 (자동 시작)
+# 서비스로 등록
 ./svc.sh install
 ./svc.sh start
 ./svc.sh status
 ```
 
-**3. deploy.yml 수정**
+**3) 워크플로우 파일 작성**
+- `.github/workflows/ci.yml` (테스트용)
+- `.github/workflows/deploy.yml` (배포용, runs-on: self-hosted)
 
-Self-Hosted Runner용으로 수정 필요 (runs-on: self-hosted)
-
-**4. 첫 배포 테스트**
+**4) 첫 배포**
 ```bash
-# Windows 데스크톱에서
-cd c:/projects/UMC/umc-9th-springboot-sweetheart
+# Windows PC에서
 git add .
-git commit -m "feat: Setup Self-Hosted Runner deployment"
+git commit -m "feat: Setup CI/CD pipeline"
 git push origin main
 
-# GitHub Actions 확인
-# https://github.com/UMC-CAU/umc-9th-springboot-sweetheart/actions
+# GitHub Actions 페이지에서 확인
 ```
 
-**참고: SSH 방식 (현재 타임아웃)**
-- GitHub Secrets (MAC_MINI_HOST, MAC_MINI_USER, MAC_MINI_SSH_KEY) 이미 등록됨 ✅
-- `.github/workflows/ci.yml` 작성 완료 ✅
-- `.github/workflows/deploy.yml` 작성 완료 ✅
-- SSH 접속 타임아웃으로 Self-Hosted Runner로 전환 필요 ⚠️
+**체크리스트:**
+- [ ] Self-Hosted Runner 설치
+- [ ] 서비스 자동 시작 설정
+- [ ] ci.yml 작성
+- [ ] deploy.yml 작성 (runs-on: self-hosted)
+- [ ] 첫 배포 성공
 
 ---
 
-## 📂 프로젝트 파일 구조
-
-```
-umc-9th-springboot-sweetheart/
-│
-├── docs/                           # 📚 모든 배포 문서
-│   ├── MAC_MINI_SETUP.md
-│   ├── CLOUDFLARE_SETUP.md
-│   ├── CICD_SETUP.md
-│   └── DEPLOYMENT.md
-│
-├── .github/
-│   └── workflows/
-│       ├── ci.yml                  # PR 테스트
-│       └── deploy.yml              # 자동 배포
-│
-├── scripts/
-│   └── deploy.sh                   # 배포 스크립트
-│
-├── src/                            # Spring Boot 소스 코드
-│   ├── main/
-│   │   ├── java/
-│   │   └── resources/
-│   │       └── application.yml
-│   └── test/
-│
-├── Dockerfile                      # Docker 이미지 빌드
-├── docker-compose.yml              # 멀티 컨테이너 설정
-├── .dockerignore
-├── .env.example                    # 환경 변수 템플릿
-├── .gitignore
-├── build.gradle
-└── README.md
-```
-
----
-
-## 🔄 배포 워크플로우
-
-### 1. 개발 → 배포 프로세스
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  1. 로컬 개발 (Windows Desktop)                             │
-└─────────────────────────────────────────────────────────────┘
-  코드 작성 → 테스트 → 커밋
-
-┌─────────────────────────────────────────────────────────────┐
-│  2. Feature 브랜치 푸시                                      │
-└─────────────────────────────────────────────────────────────┘
-  git checkout -b feature/new-feature
-  git commit -m "feat: Add new feature"
-  git push origin feature/new-feature
-
-┌─────────────────────────────────────────────────────────────┐
-│  3. Pull Request 생성                                       │
-└─────────────────────────────────────────────────────────────┘
-  → GitHub Actions CI 실행 (자동)
-    ✅ 테스트
-    ✅ 빌드
-
-┌─────────────────────────────────────────────────────────────┐
-│  4. 코드 리뷰 & Merge to main                               │
-└─────────────────────────────────────────────────────────────┘
-  → GitHub Actions CD 실행 (자동)
-    ✅ 테스트
-    ✅ 빌드
-    ✅ 맥미니 SSH 접속
-    ✅ Docker Compose 재배포
-
-┌─────────────────────────────────────────────────────────────┐
-│  5. 배포 완료!                                               │
-└─────────────────────────────────────────────────────────────┘
-  https://spring-swagger-api.log8.kr
-```
-
-### 2. 배포 시간
-
-| 단계 | 소요 시간 |
-|------|-----------|
-| 테스트 실행 | 2-3분 |
-| 빌드 | 1-2분 |
-| Docker 이미지 빌드 | 2-3분 |
-| 컨테이너 재시작 | 1분 |
-| **총 소요 시간** | **6-9분** |
-
----
-
-## 🛠️ 수동 배포 (긴급 상황)
-
-### 맥미니에서 직접 배포
+## 수동 배포 (긴급 상황)
 
 ```bash
-# 1. 맥미니 SSH 접속 (Windows에서)
-ssh your-username@192.168.0.123
+# 1. 맥미니 SSH 접속
+ssh [your_username]@[your_mac_mini_ip]
 
 # 2. 프로젝트 디렉토리 이동
-cd ~/projects/umc-9th-springboot-sweetheart
+cd ~/projects/[your-repo]
 
 # 3. 최신 코드 가져오기
 git pull origin main
@@ -338,19 +192,11 @@ docker compose logs -f backend
 curl http://localhost:8080/actuator/health
 ```
 
-### 배포 스크립트 사용 (권장)
-
-```bash
-# 맥미니에서
-cd ~/projects/umc-9th-springboot-sweetheart
-./scripts/deploy.sh
-```
-
 ---
 
-## 🔍 모니터링 및 확인
+## 모니터링
 
-### 1. 서비스 상태 확인
+### 서비스 상태 확인
 
 ```bash
 # 맥미니에서
@@ -359,154 +205,99 @@ cd ~/projects/umc-9th-springboot-sweetheart
 docker compose ps
 
 # 로그 확인
-docker compose logs -f backend    # 실시간
-docker compose logs backend | tail -n 100  # 최근 100줄
+docker compose logs -f backend
 
 # Health check
 curl http://localhost:8080/actuator/health
+
+# Cloudflare Tunnel 상태
+sudo launchctl list | grep cloudflare
 ```
 
-### 2. 외부 접속 확인
+### 외부 접속 확인
 
 ```bash
-# Windows에서
+# Windows PC에서
 
 # Health check
-curl https://spring-swagger-api.log8.kr/actuator/health
+curl https://[your-subdomain].[your-domain]/actuator/health
 
 # Swagger UI
-# 브라우저: https://spring-swagger-api.log8.kr/swagger-ui.html
-```
-
-### 3. Cloudflare 터널 상태
-
-```bash
-# 맥미니에서
-sudo launchctl list | grep cloudflare
-
-# 터널 로그
-sudo tail -f /var/log/cloudflared.log
-```
-
-### 4. 데이터베이스 확인
-
-```bash
-# 맥미니에서
-docker compose exec mysql mysql -u umc_user -p umc9th
-
-# MySQL CLI
-SHOW TABLES;
-SELECT * FROM member;
+# 브라우저: https://[your-subdomain].[your-domain]/swagger-ui.html
 ```
 
 ---
 
-## 🐛 트러블슈팅
+## 트러블슈팅
 
-### 문제 1: 배포 후 502 Bad Gateway
+### 1. 502 Bad Gateway
 
-**증상:**
-```
-https://spring-swagger-api.log8.kr → 502 Bad Gateway
-```
-
-**원인:**
-- Spring Boot 앱이 정상적으로 시작되지 않음
-
-**해결:**
 ```bash
-# 맥미니에서
-docker compose logs backend | tail -n 100
+# Spring Boot 앱 확인
+docker compose ps
+docker compose logs backend
 
-# 일반적인 원인:
-# 1. MySQL 연결 실패 → DB_PASSWORD 확인
-# 2. 포트 충돌 → lsof -i :8080
-# 3. 메모리 부족 → docker stats
+# 재시작
+docker compose restart backend
 ```
 
-### 문제 2: GitHub Actions 배포 실패 (SSH 타임아웃)
+### 2. GitHub Actions 배포 실패
 
-**증상:**
-```
-err: dial tcp ***:22: i/o timeout
-```
-
-**원인:**
-- 맥미니가 로컬 네트워크(192.168.0.61)에만 있어서 GitHub Actions 클라우드에서 접근 불가
-
-**해결 (추천):**
 ```bash
-# Self-Hosted Runner 설정 (CICD_SETUP.md 섹션 2 참고)
-# 맥미니에서 직접 GitHub Actions 실행
-
+# Self-Hosted Runner 상태 확인
 cd ~/actions-runner
-./config.sh --url https://github.com/UMC-CAU/umc-9th-springboot-sweetheart --token [TOKEN]
-./svc.sh install
+./svc.sh status
+
+# 재시작
+./svc.sh stop
 ./svc.sh start
 ```
 
-**대안 (복잡함, 비추천):**
-- Cloudflare Tunnel for SSH
-- 포트 포워딩 (보안 위험)
+### 3. Cloudflare Tunnel 연결 안 됨
 
-### 문제 3: Cloudflare 터널 연결 안 됨
-
-**증상:**
-```
-Cloudflare Tunnel status: Disconnected
-```
-
-**해결:**
 ```bash
-# 맥미니에서
-
-# 1. 터널 서비스 상태 확인
+# 서비스 상태 확인
 sudo launchctl list | grep cloudflare
 
-# 2. 터널 재시작
-sudo launchctl stop com.cloudflare.cloudflared
-sudo launchctl start com.cloudflare.cloudflared
+# Status가 1이면 plist 파일 확인
+cat /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
 
-# 3. 설정 파일 확인
-cat ~/.cloudflared/config.yml
+# ProgramArguments가 완전한지 확인:
+# - /opt/homebrew/bin/cloudflared
+# - --config
+# - /etc/cloudflared/config.yml
+# - tunnel
+# - run
+# - [tunnel-name]
 
-# 4. 수동 실행 테스트
-cloudflared tunnel run mac-mini-umc
+# 재시작
+sudo launchctl unload /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
+sudo launchctl load /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
 ```
 
-### 문제 4: Docker 빌드 실패
+### 4. MySQL 연결 실패
 
-**증상:**
-```
-ERROR: failed to solve: process "/bin/sh -c ./gradlew build" did not complete
-```
-
-**해결:**
 ```bash
-# 맥미니에서
+# .env 파일 확인
+cat .env
 
-# 1. 로컬에서 빌드 테스트
-./gradlew clean build
+# MySQL 컨테이너 상태
+docker compose ps mysql
+docker compose logs mysql
 
-# 2. Docker 메모리 증가
-# Docker Desktop → Preferences → Resources → Memory: 4GB
-
-# 3. 빌드 캐시 정리
-docker builder prune -a
+# 재시작
+docker compose restart mysql
 ```
 
 ---
 
-## 📊 유용한 명령어 모음
+## 유용한 명령어
 
-### Docker 관련
+### Docker
 
 ```bash
 # 전체 재시작
 docker compose restart
-
-# 특정 서비스만 재시작
-docker compose restart backend
 
 # 로그 실시간 확인
 docker compose logs -f
@@ -515,40 +306,26 @@ docker compose logs -f
 docker compose exec backend bash
 docker compose exec mysql bash
 
-# 리소스 사용량 확인
-docker stats
-
 # 디스크 정리
 docker system prune -a
-docker volume prune
 ```
 
-### Git 관련
+### Git
 
 ```bash
 # 최신 코드 가져오기
-git fetch origin
 git pull origin main
 
 # 로컬 변경 사항 되돌리기
 git reset --hard origin/main
-
-# 브랜치 확인
-git branch -a
-
-# 최근 커밋 확인
-git log --oneline -n 10
 ```
 
-### 시스템 관련
+### 시스템
 
 ```bash
 # 포트 사용 확인
 lsof -i :8080
 lsof -i :3306
-
-# 프로세스 종료
-kill -9 <PID>
 
 # 디스크 사용량
 df -h
@@ -559,152 +336,48 @@ top
 
 ---
 
-## 🔐 보안 고려사항
+## 완료 체크리스트
 
-### 1. 환경 변수 관리
-
-```bash
-# .env 파일은 절대 Git에 커밋하지 않기
-echo ".env" >> .gitignore
-
-# GitHub Secrets 사용
-# 민감한 정보는 모두 Secrets에 저장
-```
-
-### 2. SSH 키 관리
-
-```bash
-# 개인 키 권한 설정
-chmod 600 ~/.ssh/mac_mini_deploy
-
-# 공개 키만 서버에 등록
-# 개인 키는 로컬에만 보관
-```
-
-### 3. 방화벽 설정
-
-```bash
-# 맥미니에서 불필요한 포트 차단
-# Cloudflare Tunnel 사용 시 8080 포트 외부 노출 불필요
-```
-
-### 4. Cloudflare Access Policy (선택)
-
-- Swagger UI를 공개하고 싶지 않다면
-- Cloudflare Access로 이메일 인증 추가
-- 특정 사용자만 접근 허용
-
----
-
-## 📈 다음 단계
-
-### Phase 4: 추가 기능
-
-1. **모니터링 추가**
-   - Prometheus + Grafana
-   - Spring Boot Actuator 메트릭
-   - 알람 설정
-
-2. **로깅 중앙화**
-   - ELK Stack (Elasticsearch, Logstash, Kibana)
-   - 로그 수집 및 분석
-
-3. **데이터베이스 백업**
-   - 자동 백업 스크립트
-   - S3 또는 외부 스토리지 연동
-
-4. **Blue-Green 배포**
-   - 무중단 배포
-   - 트래픽 전환
-
-5. **부하 테스트**
-   - JMeter 또는 Gatling
-   - 성능 최적화
-
----
-
-## 🎓 학습 자료
-
-### 공식 문서
-- [Spring Boot](https://spring.io/projects/spring-boot)
-- [Docker](https://docs.docker.com/)
-- [Docker Compose](https://docs.docker.com/compose/)
-- [GitHub Actions](https://docs.github.com/en/actions)
-- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/)
-
-### 관련 개념
-- CI/CD Pipeline
-- Containerization
-- Infrastructure as Code
-- Zero Trust Network Access
-
----
-
-## 📞 문의 및 지원
-
-### 문제 발생 시
-
-1. **로그 확인**: `docker compose logs backend`
-2. **Health check**: `curl http://localhost:8080/actuator/health`
-3. **GitHub Issues**: 저장소에 이슈 등록
-4. **Cloudflare Dashboard**: 터널 상태 확인
-
----
-
-## ✅ 최종 체크리스트
-
-### 맥미니 설정
-- [x] Java 21 설치
-- [x] Docker Desktop 설치
-- [x] MySQL 컨테이너 실행
-- [x] SSH 접속 가능
-- [x] 고정 IP 설정
-- [x] 프로젝트 클론 완료
-- [x] Chrome Remote Desktop 설정
-- [x] 자동 로그인 설정
-
-### Cloudflare 설정
-- [x] cloudflared 설치 ✅
-- [x] 터널 생성
-- [x] DNS 라우팅 설정
-- [x] HTTPS 접속 확인
-- [x] 서비스 자동 시작 설정
-
-### CI/CD 설정
-- [x] SSH 키 생성 및 등록
-- [x] GitHub Secrets 등록
-- [x] 워크플로우 파일 작성 (ci.yml, deploy.yml)
-- [x] **Self-Hosted Runner 설정** ✨
-- [x] deploy.yml을 Self-Hosted Runner용으로 수정
-- [x] 첫 배포 성공 🎉
-- [x] Health check 통과
+### 전체 시스템
+- [ ] **맥미니 설정 완료** (MAC_MINI_SETUP.md)
+- [ ] **Cloudflare Tunnel 설정 완료** (CLOUDFLARE_SETUP.md)
+- [ ] **GitHub Actions CI/CD 설정 완료** (CICD_SETUP.md)
 
 ### 최종 확인
-- [x] `https://spring-swagger-api.log8.kr` 접속 가능 🌐
-- [x] Swagger UI 확인
-- [x] API 호출 테스트
-- [x] `git push origin main`으로 자동 배포 확인 ✨
-- [x] 로그 모니터링 설정
+- [ ] `https://[your-subdomain].[your-domain]` 접속 가능
+- [ ] Swagger UI 확인
+- [ ] `git push origin main`으로 자동 배포 확인
+- [ ] Health check 통과
 
 ---
 
-## 🎉 현재 진행 상황
+## 다음 단계 (선택 사항)
 
-**🎊 모든 작업 완료!**
+### 보안 강화
+- Zero Trust Access Policy 설정
+- API 인증 추가
+- 방화벽 설정
 
-- ✅ **로컬 개발 환경**: Windows 데스크톱
-- ✅ **배포 서버**: 맥미니 (Docker + MySQL 실행 중)
-- ✅ **Self-Hosted Runner**: 자동 배포 시스템 완성! 🎉
-- ✅ **CI/CD 워크플로우**: `git push origin main`으로 자동 배포됨!
-- ✅ **Cloudflare Tunnel**: HTTPS 외부 접속 가능! 🌐
-- ✅ **HTTPS 도메인**: `https://spring-swagger-api.log8.kr`
-- ✅ **원격 접속**: SSH, Chrome Remote Desktop
+### 모니터링
+- Prometheus + Grafana
+- 슬랙 알림
+- 로그 중앙화 (ELK Stack)
 
-**선택 사항 (나중에 추가 가능):**
-- 🔒 **Zero Trust Access Policy** (보안 강화)
-- 📢 **슬랙 알림** (배포 성공/실패 알림)
-- 📊 **모니터링 대시보드** (Prometheus + Grafana)
+### 성능 최적화
+- 데이터베이스 인덱싱
+- 캐싱 (Redis)
+- 부하 테스트
 
-이제 전 세계 어디서나 HTTPS로 API 접근 가능!
+---
 
-**Happy Coding! 🚀**
+## 문서 구조
+
+```
+docs/
+├── MAC_MINI_SETUP.md      # 1단계: 맥미니 초기 설정
+├── CLOUDFLARE_SETUP.md    # 2단계: Cloudflare 터널 설정
+├── CICD_SETUP.md          # 3단계: GitHub Actions 설정
+└── DEPLOYMENT.md          # 전체 가이드 (이 문서)
+```
+
+각 문서를 순서대로 따라하면 완전 자동화 배포 시스템 완성!

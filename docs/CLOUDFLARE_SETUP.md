@@ -1,548 +1,328 @@
-# Cloudflare 터널 설정 가이드
+# Cloudflare Tunnel 설정 가이드
 
 ## 목표
 
-`https://spring-swagger-api.log8.kr` 서브도메인으로 맥미니의 Spring Boot API를 HTTPS로 안전하게 노출
+HTTPS로 외부에서 Spring Boot API에 안전하게 접속하기
 
-**⚠️ 중요:** 이 문서는 **외부 사용자가 API에 HTTPS로 접근**하기 위한 설정입니다. GitHub Actions 자동 배포와는 별도입니다.
+**완성 후:**
+- ✅ 외부에서 `https://[your-subdomain].[your-domain]`로 접속 가능
+- ✅ 자동 HTTPS (SSL 인증서 자동)
+- ✅ 포트 포워딩 불필요
+- ✅ DDoS 보호
 
-- **Cloudflare Tunnel (이 문서)**: 외부 사용자 → HTTPS → 맥미니 API
-- **Self-Hosted Runner ([CICD_SETUP.md](CICD_SETUP.md) 참고)**: GitHub Actions → 맥미니 자동 배포
-
-## 목차
-
-1. [Cloudflare Tunnel 개요](#1-cloudflare-tunnel-개요)
-2. [Cloudflare 웹 설정](#2-cloudflare-웹-설정)
-3. [맥미니에서 cloudflared 설치](#3-맥미니에서-cloudflared-설치)
-4. [터널 생성 및 연결](#4-터널-생성-및-연결)
-5. [서브도메인 라우팅 설정](#5-서브도메인-라우팅-설정)
-6. [HTTPS 접속 테스트](#6-https-접속-테스트)
-7. [자동 시작 설정](#7-자동-시작-설정)
+**⚠️ 참고:** 이 설정은 **외부 사용자 접속용**입니다. GitHub Actions 자동 배포와는 별개입니다.
 
 ---
 
-## 1. Cloudflare Tunnel 개요
+## 1. cloudflared 설치
 
-**⭐ 이 설정의 목적:**
-- 외부 사용자(클라이언트)가 `https://spring-swagger-api.log8.kr`로 API에 접속할 수 있게 함
-- GitHub Actions 배포와는 무관 (배포는 Self-Hosted Runner 사용)
+### 1.1 맥미니에 설치
 
-### 1.1 왜 Cloudflare Tunnel을 사용하는가?
-
-**기존 방식 (포트 포워딩)의 문제점:**
-- ❌ 공유기 설정 필요
-- ❌ 공인 IP 노출
-- ❌ HTTP만 가능 (HTTPS는 인증서 설정 복잡)
-- ❌ DDoS 공격 취약
-
-**Cloudflare Tunnel의 장점:**
-- ✅ **포트 포워딩 불필요**: 방화벽 뚫을 필요 없음
-- ✅ **자동 HTTPS**: Cloudflare가 SSL 인증서 자동 관리
-- ✅ **보안**: DDoS 보호, IP 숨김
-- ✅ **서브도메인 쉽게 관리**: DNS 설정 자동화
-- ✅ **무료**: 개인 프로젝트는 무료!
-
-### 1.2 작동 원리
-
-```
-[맥미니:8080]
-    ↓ (Outbound 연결)
-[Cloudflare Tunnel (cloudflared)]
-    ↓
-[Cloudflare Edge Network]
-    ↓ (HTTPS)
-[사용자 브라우저] → https://spring-swagger-api.log8.kr
-```
-
-- 맥미니에서 **Cloudflare로 나가는(outbound) 연결**만 필요
-- 외부에서 맥미니로 들어오는(inbound) 포트 개방 불필요
-- Cloudflare가 중간에서 HTTPS 처리
-
----
-
-## 2. Cloudflare 웹 설정
-
-### 2.1 Cloudflare 대시보드 접속
-
-1. https://dash.cloudflare.com 접속
-2. **log8.kr** 도메인 선택
-3. 좌측 메뉴에서 **Zero Trust** 클릭
-   - 없다면: **Add a site** → Zero Trust 활성화 (무료)
-
-### 2.2 Zero Trust 계정 생성 (처음 한 번만)
-
-1. **Zero Trust** → **Access** → **Tunnels** 클릭
-2. **Create a tunnel** 버튼 클릭
-3. 터널 이름 입력: `mac-mini-umc`
-4. **Save tunnel** 클릭
-
-### 2.3 cloudflared 토큰 복사
-
-터널 생성 후 화면에 표시되는 명령어:
-
+**SSH로 맥미니 접속:**
 ```bash
-# 이런 형태의 명령어가 표시됨 (토큰 포함)
-cloudflared service install <YOUR_TOKEN_HERE>
+ssh [your_username]@[your_mac_mini_ip]
 ```
 
-**이 토큰을 복사해두세요!** (나중에 맥미니에서 사용)
-
-**주의:** 브라우저를 닫으면 토큰을 다시 볼 수 없으니 반드시 저장!
-
----
-
-## 3. 맥미니에서 cloudflared 설치
-
-### 3.1 cloudflared CLI 설치
-
-**맥미니 터미널에서:**
-
+**cloudflared 설치:**
 ```bash
-# Homebrew로 cloudflared 설치
+# Homebrew로 설치
 brew install cloudflare/cloudflare/cloudflared
 
-# 설치 확인
+# 확인
 cloudflared --version
-# 출력: cloudflared version 2024.x.x
 ```
 
-### 3.2 Cloudflare 로그인
+### 1.2 Cloudflare 로그인
 
 ```bash
-# Cloudflare 계정 인증
 cloudflared tunnel login
 ```
 
-브라우저가 자동으로 열리고 Cloudflare 로그인 페이지가 나타남:
-
+브라우저가 열리면:
 1. Cloudflare 계정으로 로그인
-2. **log8.kr** 도메인 선택
+2. 도메인 선택 (예: `[your-domain]`)
 3. **Authorize** 클릭
 
-터미널에 다음 메시지 표시:
+성공 메시지:
 ```
 You have successfully logged in.
 ```
 
-인증 파일 저장 위치:
-```
-~/.cloudflared/cert.pem
-```
-
 ---
 
-## 4. 터널 생성 및 연결
+## 2. 터널 생성
 
-### 4.1 터널 생성 (CLI 방식)
-
-**옵션 A: 웹에서 이미 생성했다면 스킵**
-
-**옵션 B: CLI로 직접 생성**
+### 2.1 터널 생성
 
 ```bash
 # 터널 생성
-cloudflared tunnel create mac-mini-umc
+cloudflared tunnel create [tunnel-name]
 
-# 생성된 터널 확인
+# 생성 확인
 cloudflared tunnel list
 ```
 
-출력 예시:
+**출력 예시:**
 ```
-ID                                   NAME            CREATED
-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx mac-mini-umc    2024-01-15T12:00:00Z
+ID                                   NAME           CREATED
+[tunnel-id]                          [tunnel-name]  2024-01-15T12:00:00Z
 ```
 
 **터널 ID를 복사해두세요!**
 
-### 4.2 터널 설정 파일 생성
+---
+
+## 3. 터널 설정
+
+### 3.1 시스템 레벨 설정 디렉토리 생성
 
 ```bash
 # 설정 디렉토리 생성
-mkdir -p ~/.cloudflared
+sudo mkdir -p /etc/cloudflared
 
-# 설정 파일 생성
-nano ~/.cloudflared/config.yml
+# credentials 파일 복사
+sudo cp ~/.cloudflared/[tunnel-id].json /etc/cloudflared/
 ```
 
-다음 내용 입력:
+### 3.2 설정 파일 생성
 
+```bash
+sudo nano /etc/cloudflared/config.yml
+```
+
+**내용 입력:**
 ```yaml
-tunnel: mac-mini-umc
-credentials-file: /Users/your-username/.cloudflared/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.json
+tunnel: [tunnel-name]
+credentials-file: /etc/cloudflared/[tunnel-id].json
 
-# 라우팅 규칙
 ingress:
-  # Spring Boot API (Swagger 포함)
-  - hostname: spring-swagger-api.log8.kr
+  - hostname: [your-subdomain].[your-domain]
     service: http://localhost:8080
-
-  # 다른 서브도메인 추가 가능 (예시)
-  # - hostname: api.log8.kr
-  #   service: http://localhost:8080
-
-  # 기본 규칙 (필수, 맨 마지막에 위치)
   - service: http_status:404
 ```
 
-**중요:**
-- `your-username`을 실제 맥미니 사용자명으로 변경
-- `xxxxxxxx...json`을 실제 생성된 파일명으로 변경
-  ```bash
-  # 파일명 확인
-  ls ~/.cloudflared/*.json
-  ```
+**예시:**
+```yaml
+tunnel: mac-mini-umc
+credentials-file: /etc/cloudflared/c8020eea-444c-41eb-85c8-302e025fe1cd.json
 
-### 4.3 터널 DNS 라우팅 설정
+ingress:
+  - hostname: spring-swagger-api.log8.kr
+    service: http://localhost:8080
+  - service: http_status:404
+```
+
+---
+
+## 4. DNS 라우팅 설정
 
 ```bash
 # 서브도메인을 터널에 연결
+cloudflared tunnel route dns [tunnel-name] [your-subdomain].[your-domain]
+```
+
+**예시:**
+```bash
 cloudflared tunnel route dns mac-mini-umc spring-swagger-api.log8.kr
 ```
 
-출력:
+**출력:**
 ```
-Added CNAME spring-swagger-api.log8.kr which will route to this tunnel.
-```
-
-이 명령어가 자동으로 수행하는 작업:
-- Cloudflare DNS에 CNAME 레코드 생성
-- `spring-swagger-api.log8.kr` → 터널로 라우팅
-
----
-
-## 5. 서브도메인 라우팅 설정
-
-### 5.1 Cloudflare 대시보드에서 DNS 확인
-
-1. Cloudflare 대시보드 → **log8.kr** 도메인 선택
-2. **DNS** → **Records** 클릭
-3. 다음 레코드가 자동으로 추가되었는지 확인:
-
-   | Type | Name | Content | Proxy status |
-   |------|------|---------|--------------|
-   | CNAME | spring-swagger-api | xxxxxxxx.cfargotunnel.com | Proxied (오렌지 구름) |
-
-**주의:** Proxy status가 **Proxied (오렌지 구름)**인지 확인!
-
-### 5.2 수동으로 DNS 레코드 추가 (자동 생성 실패 시)
-
-CLI 명령어가 실패했다면 수동으로 추가:
-
-1. Cloudflare DNS 페이지에서 **Add record** 클릭
-2. 다음 정보 입력:
-   ```
-   Type: CNAME
-   Name: spring-swagger-api
-   Target: <TUNNEL_ID>.cfargotunnel.com
-   Proxy status: Proxied (오렌지 구름 활성화)
-   TTL: Auto
-   ```
-3. **Save** 클릭
-
-**터널 ID 확인 방법:**
-```bash
-cloudflared tunnel list
+Added CNAME [your-subdomain].[your-domain] which will route to this tunnel.
 ```
 
 ---
 
-## 6. HTTPS 접속 테스트
+## 5. 테스트
 
-### 6.1 터널 실행 (테스트)
-
-**맥미니 터미널에서:**
+### 5.1 터널 실행 (테스트)
 
 ```bash
-# Spring Boot 앱이 실행 중인지 확인
+# Spring Boot 앱 실행 중인지 확인
 curl http://localhost:8080/actuator/health
 
-# 터널 실행 (포그라운드 모드, 테스트용)
-cloudflared tunnel run mac-mini-umc
+# 터널 실행 (테스트용)
+cloudflared tunnel --config /etc/cloudflared/config.yml run [tunnel-name]
 ```
 
-출력:
+**성공 출력:**
 ```
-2024-01-15T12:00:00Z INF Starting tunnel tunnelID=xxxxxxxx
-2024-01-15T12:00:01Z INF Connection established connIndex=0
-2024-01-15T12:00:01Z INF Registered tunnel connection connIndex=0
+INF Starting tunnel tunnelID=[tunnel-id]
+INF Connection established
+INF Registered tunnel connection
 ```
 
-**새 터미널 창에서 테스트:**
+### 5.2 외부 접속 테스트
 
+**새 터미널에서:**
 ```bash
-# 외부에서 접속 테스트
-curl https://spring-swagger-api.log8.kr/actuator/health
+# HTTPS 접속 테스트
+curl https://[your-subdomain].[your-domain]/actuator/health
 ```
 
-출력:
+**성공 출력:**
 ```json
 {"status":"UP"}
 ```
 
-### 6.2 브라우저에서 접속
-
-1. 브라우저 열기
-2. 주소창에 입력: `https://spring-swagger-api.log8.kr`
-3. ✅ HTTPS 인증서가 자동으로 적용되어 있음 (자물쇠 아이콘)
-4. Swagger UI 확인: `https://spring-swagger-api.log8.kr/swagger-ui.html`
-
-### 6.3 Windows 데스크톱에서 테스트
-
-```bash
-# Windows 터미널에서
-curl https://spring-swagger-api.log8.kr/actuator/health
-```
-
-또는 브라우저에서 동일하게 접속 가능!
+브라우저에서도 확인:
+- `https://[your-subdomain].[your-domain]`
+- `https://[your-subdomain].[your-domain]/swagger-ui.html`
 
 ---
 
-## 7. 자동 시작 설정
+## 6. 자동 시작 설정 (중요!)
 
-### 7.1 터널을 서비스로 등록 (추천)
-
-**맥미니 터미널에서:**
+### 6.1 plist 파일 생성
 
 ```bash
-# cloudflared를 시스템 서비스로 설치
-sudo cloudflared service install
+sudo nano /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
+```
 
-# 서비스 시작
-sudo launchctl start com.cloudflare.cloudflared
+**전체 내용 입력:**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.cloudflare.cloudflared</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/cloudflared</string>
+        <string>--config</string>
+        <string>/etc/cloudflared/config.yml</string>
+        <string>tunnel</string>
+        <string>run</string>
+        <string>[tunnel-name]</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/var/log/cloudflared.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/cloudflared.err.log</string>
+</dict>
+</plist>
+```
 
-# 서비스 상태 확인
+**⚠️ 중요:** `[tunnel-name]`을 실제 터널 이름으로 변경!
+
+### 6.2 권한 설정 및 서비스 시작
+
+```bash
+# 권한 설정
+sudo chown root:wheel /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
+sudo chmod 644 /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
+
+# 서비스 로드 및 시작
+sudo launchctl load /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
+
+# 상태 확인
 sudo launchctl list | grep cloudflare
 ```
 
-**장점:**
-- 맥미니 재부팅 시 자동 시작
-- 백그라운드에서 항상 실행
-- 로그 자동 관리
-
-### 7.2 서비스 로그 확인
-
-```bash
-# 로그 실시간 확인
-sudo tail -f /var/log/cloudflared.log
-
-# 또는
-sudo cloudflared service logs
+**성공 출력:**
 ```
+-    0    com.cloudflare.cloudflared
+```
+- 첫 번째 `-`: 프로세스 상태
+- 두 번째 `0`: **Status (0 = 성공)**
+- PID 숫자가 보이면 실행 중
 
-### 7.3 서비스 관리 명령어
+**Status가 1이면 실패!** → 트러블슈팅 참고
+
+### 6.3 로그 확인
 
 ```bash
-# 서비스 중지
-sudo launchctl stop com.cloudflare.cloudflared
+# 실시간 로그 확인
+sudo tail -f /var/log/cloudflared.out.log
 
-# 서비스 재시작
-sudo launchctl stop com.cloudflare.cloudflared
-sudo launchctl start com.cloudflare.cloudflared
-
-# 서비스 제거 (필요시)
-sudo cloudflared service uninstall
+# 에러 로그 확인
+sudo tail -f /var/log/cloudflared.err.log
 ```
 
 ---
 
-## 8. Cloudflare 웹 대시보드에서 확인
+## 완료 체크리스트
 
-### 8.1 터널 상태 확인
+### Cloudflare 설정
+- [ ] cloudflared 설치
+- [ ] Cloudflare 로그인
+- [ ] 터널 생성
+- [ ] config.yml 작성 (/etc/cloudflared/)
+- [ ] DNS 라우팅 설정
 
-1. Cloudflare Zero Trust 대시보드
-2. **Access** → **Tunnels**
-3. `mac-mini-umc` 터널 상태 확인:
-   - **Status**: Healthy (초록색)
-   - **Connections**: Active
-
-### 8.2 트래픽 모니터링
-
-1. **Analytics** → **Traffic** 클릭
-2. `spring-swagger-api.log8.kr` 서브도메인의 요청 확인 가능
-
----
-
-## 9. 고급 설정 (선택 사항)
-
-### 9.1 Access Policy 설정 (인증 추가)
-
-Spring Boot API를 공개하지 않고 인증된 사용자만 접근하도록 설정:
-
-1. Cloudflare Zero Trust → **Access** → **Applications**
-2. **Add an application** 클릭
-3. **Self-hosted** 선택
-4. 다음 정보 입력:
-   ```
-   Application name: UMC Spring API
-   Subdomain: spring-swagger-api
-   Domain: log8.kr
-   ```
-5. **Access Policy** 추가:
-   ```
-   Rule name: Allow specific emails
-   Action: Allow
-   Rule: Emails ending in @your-domain.com
-   ```
-6. **Save application**
-
-이제 `https://spring-swagger-api.log8.kr` 접속 시 Cloudflare 로그인 페이지가 나타남!
-
-### 9.2 여러 서비스 라우팅
-
-config.yml 수정:
-
-```yaml
-tunnel: mac-mini-umc
-credentials-file: /Users/your-username/.cloudflared/xxx.json
-
-ingress:
-  # Swagger API
-  - hostname: spring-swagger-api.log8.kr
-    service: http://localhost:8080
-
-  # 프론트엔드 (나중에 추가)
-  - hostname: app.log8.kr
-    service: http://localhost:3000
-
-  # MySQL Admin (phpMyAdmin 등)
-  - hostname: db-admin.log8.kr
-    service: http://localhost:8081
-
-  # 기본 규칙
-  - service: http_status:404
-```
-
-각 서브도메인을 DNS에 등록:
-
-```bash
-cloudflared tunnel route dns mac-mini-umc spring-swagger-api.log8.kr
-cloudflared tunnel route dns mac-mini-umc app.log8.kr
-cloudflared tunnel route dns mac-mini-umc db-admin.log8.kr
-```
-
-### 9.3 로드 밸런싱 (여러 맥미니/서버)
-
-config.yml:
-
-```yaml
-ingress:
-  - hostname: spring-swagger-api.log8.kr
-    service: http_status:200
-    originRequest:
-      connectTimeout: 10s
-      noTLSVerify: false
-```
-
----
-
-## 10. 트러블슈팅
-
-### 10.1 터널이 연결되지 않음
-
-```bash
-# 터널 상태 확인
-cloudflared tunnel info mac-mini-umc
-
-# 설정 파일 검증
-cloudflared tunnel ingress validate
-
-# 터널 재시작
-sudo launchctl stop com.cloudflare.cloudflared
-sudo launchctl start com.cloudflare.cloudflared
-```
-
-### 10.2 DNS 전파 확인
-
-```bash
-# DNS 조회
-nslookup spring-swagger-api.log8.kr
-
-# 또는
-dig spring-swagger-api.log8.kr
-```
-
-출력에 CNAME 레코드가 보여야 함:
-```
-spring-swagger-api.log8.kr. 300 IN CNAME xxxxxxxx.cfargotunnel.com.
-```
-
-### 10.3 502 Bad Gateway 에러
-
-**원인:**
-- Spring Boot 앱이 실행되지 않음
-- 포트 번호 불일치
-
-**해결:**
-
-```bash
-# Spring Boot 앱 상태 확인
-docker compose ps
-
-# 로컬에서 접근 테스트
-curl http://localhost:8080/actuator/health
-
-# config.yml의 포트 번호 확인
-cat ~/.cloudflared/config.yml
-```
-
-### 10.4 HTTPS 인증서 오류
-
-**원인:**
-- Cloudflare Proxy가 비활성화됨
-
-**해결:**
-1. Cloudflare DNS 페이지
-2. `spring-swagger-api` CNAME 레코드의 Proxy status 확인
-3. **Proxied (오렌지 구름)** 활성화
-
----
-
-## 11. 완료 체크리스트
-
-- [ ] Cloudflare Zero Trust 계정 생성
-- [ ] cloudflared CLI 설치 (맥미니)
-- [ ] Cloudflare 로그인 (`cloudflared tunnel login`)
-- [ ] 터널 생성 (`mac-mini-umc`)
-- [ ] config.yml 작성
-- [ ] DNS 라우팅 설정 (`spring-swagger-api.log8.kr`)
-- [ ] 터널 실행 및 테스트
+### 테스트
+- [ ] 터널 실행 테스트
 - [ ] HTTPS 접속 성공
-- [ ] 서비스 자동 시작 설정
-- [ ] Windows에서 접속 확인
+- [ ] Swagger UI 접속 확인
 
----
-
-## 12. 최종 확인
-
-### 12.1 모든 엔드포인트 테스트
-
-```bash
-# Health check
-curl https://spring-swagger-api.log8.kr/actuator/health
-
-# Swagger UI (브라우저에서)
-https://spring-swagger-api.log8.kr/swagger-ui.html
-
-# API 호출 (예시)
-curl https://spring-swagger-api.log8.kr/api/members
-```
-
-### 12.2 성능 확인
-
-```bash
-# 응답 시간 측정
-time curl https://spring-swagger-api.log8.kr/actuator/health
-```
-
-보통 100-300ms 정도 (Cloudflare 경유)
+### 자동 시작
+- [ ] plist 파일 생성 (ProgramArguments 완전히 작성)
+- [ ] 서비스 로드 및 시작
+- [ ] Status 0 확인
+- [ ] 로그 확인
 
 ---
 
 ## 다음 단계
 
-✅ Cloudflare 터널 설정 완료!
+✅ Cloudflare Tunnel 설정 완료!
 
-다음 문서를 참고하세요:
-- `CICD_SETUP.md`: GitHub Actions로 자동 배포 설정
-- `DEPLOYMENT.md`: 전체 배포 워크플로우
+**다음 작업:**
+- [GitHub Actions CI/CD 설정](CICD_SETUP.md) - 자동 배포
+
+---
+
+## 트러블슈팅
+
+### Status가 1 (실패)
+
+```bash
+# plist 파일 확인
+cat /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
+
+# ProgramArguments가 완전한지 확인:
+# - /opt/homebrew/bin/cloudflared
+# - --config
+# - /etc/cloudflared/config.yml
+# - tunnel
+# - run
+# - [tunnel-name]
+
+# 서비스 재시작
+sudo launchctl unload /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
+sudo launchctl load /Library/LaunchDaemons/com.cloudflare.cloudflared.plist
+```
+
+### 502 Bad Gateway
+
+```bash
+# Spring Boot 앱 확인
+docker compose ps
+
+# 로컬 접속 테스트
+curl http://localhost:8080/actuator/health
+
+# 컨테이너 재시작
+docker compose restart
+```
+
+### DNS 전파 확인
+
+```bash
+# DNS 조회
+nslookup [your-subdomain].[your-domain]
+
+# CNAME 레코드 확인
+dig [your-subdomain].[your-domain]
+```
+
+### Cloudflare 대시보드 확인
+
+1. https://dash.cloudflare.com
+2. **Zero Trust** → **Access** → **Tunnels**
+3. 터널 상태 확인: **Healthy (초록색)**
