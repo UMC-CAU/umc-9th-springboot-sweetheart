@@ -59,7 +59,10 @@ domain/
 └── store/      - Store domain (placeholder)
 
 global/
-└── entity/     - Shared base entities
+├── entity/     - Shared base entities
+├── response/   - Unified API response structure
+├── exception/  - Global exception handling
+└── config/     - Application configuration
 ```
 
 ### Layer Organization (within each domain)
@@ -73,7 +76,6 @@ Each domain module follows this standard layered structure:
 - **service/** - Business logic layer
 - **controller/** - REST API endpoints
 - **dto/** - Data transfer objects
-- **converter/** - Entity-DTO conversion utilities
 
 ### Entity Relationships
 
@@ -120,12 +122,88 @@ Always use these fetch join methods when accessing member food preferences to av
 
 #### 2. Base Entity Pattern
 
-All time-tracked entities should extend `BaseEntity`:
-- Provides automatic `createdAt` and `updatedAt` timestamps
-- Uses Spring Data JPA's `@CreatedDate` and `@LastModifiedDate`
-- Requires `@EnableJpaAuditing` in main application class (already configured)
+The codebase uses a two-tier base entity hierarchy:
 
-#### 3. Lombok Conventions
+- **BaseTimeEntity** (lowest level)
+  - Provides `createdAt` and `updatedAt` timestamps
+  - Uses Spring Data JPA's `@CreatedDate` and `@LastModifiedDate`
+  - Requires `@EnableJpaAuditing` in main application class (already configured)
+
+- **BaseEntity** (extends BaseTimeEntity)
+  - Adds soft delete functionality via `deletedAt` field
+  - Provides `softDelete()` method to mark entities as deleted
+  - Provides `isDeleted()` method to check deletion status
+
+All time-tracked entities should extend one of these base entities. Use `BaseEntity` if soft delete is needed, otherwise use `BaseTimeEntity`.
+
+#### 3. Unified API Response Structure
+
+All API responses follow a consistent structure using `ApiResponse<T>`:
+
+**Success Response Format:**
+```json
+{
+  "isSuccess": true,
+  "code": "MEMBER_200",
+  "message": "회원 조회 성공",
+  "timestamp": "2024-01-15T10:30:00",
+  "data": { ... }
+}
+```
+
+**Error Response Format:**
+```json
+{
+  "isSuccess": false,
+  "code": "MEMBER_404",
+  "message": "회원을 찾을 수 없습니다",
+  "timestamp": "2024-01-15T10:30:00",
+  "path": "/api/members/999",
+  "traceId": "abc-123-def"
+}
+```
+
+**Usage in Controllers:**
+```java
+// Success with data
+return ApiResponse.onSuccess(SuccessCode.MEMBER_OK, member);
+
+// Success without data
+return ApiResponse.onSuccess(SuccessCode.MEMBER_DELETED);
+
+// Shorthand methods
+return ApiResponse.ok(data);          // Uses SuccessCode.OK
+return ApiResponse.created(data);     // Uses SuccessCode.CREATED
+```
+
+#### 4. Error Handling Architecture
+
+**GlobalExceptionHandler** (`@RestControllerAdvice`) handles all exceptions consistently:
+
+- **CustomException** - Business logic errors with custom error codes
+- **MethodArgumentNotValidException** - Validation errors with field details
+- **MissingServletRequestParameterException** - Missing required parameters
+- **MethodArgumentTypeMismatchException** - Type conversion errors
+- **NoHandlerFoundException** - 404 Not Found
+- **Exception** - Catch-all for unexpected errors
+
+**Custom Error Codes:**
+- Defined in `ErrorCode` enum implementing `BaseCode` interface
+- Format: `{DOMAIN}_{HTTP_STATUS}` (e.g., `MEMBER_404`, `COMMON_500`)
+- Each code has status, code, and message
+
+**Throwing Custom Exceptions:**
+```java
+throw new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+```
+
+**Response Code Pattern:**
+- All response codes (success and error) implement `BaseCode` interface
+- Ensures consistency: `getStatus()`, `getCode()`, `getMessage()`
+- Success codes in `SuccessCode` enum
+- Error codes in `ErrorCode` enum
+
+#### 5. Lombok Conventions
 
 All entities follow this Lombok pattern:
 ```java
@@ -138,12 +216,39 @@ All entities follow this Lombok pattern:
 
 This prevents external instantiation while supporting JPA proxies and the builder pattern.
 
+#### 6. Service Layer Patterns
+
+**Transaction Management:**
+- Class-level `@Transactional(readOnly = true)` for read operations
+- Method-level `@Transactional` for write operations (create, update, delete)
+
+**Exception Handling:**
+- Use `CustomException` with appropriate `ErrorCode` for business logic errors
+- Example: `.orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND))`
+
+**Logging:**
+- All service methods log entry points with relevant parameters
+- Use SLF4J with pattern: `log.info("[ClassName.methodName] Description - param: {}", value)`
+
+#### 7. API Documentation (Swagger)
+
+- Swagger UI available at `/swagger-ui.html`
+- API docs available at `/api-docs`
+- Use `@Tag` for controller-level descriptions
+- Use `@Operation` for endpoint-level descriptions
+- Use `@Parameter` for parameter-level descriptions
+
+**Configuration:**
+- Operations and tags sorted alphabetically
+- Request duration displayed
+- Actuator endpoints hidden from Swagger
+
 ## Development Guidelines
 
 ### Adding New Entities
 
 1. Create entity class in appropriate `domain/[domain-name]/entity/` package
-2. Extend `BaseEntity` if timestamps are needed
+2. Extend `BaseEntity` if timestamps and soft delete are needed, or `BaseTimeEntity` if only timestamps are needed
 3. Use appropriate fetch strategies (`LAZY` preferred for associations)
 4. Create corresponding repository with fetch join queries for N+1 prevention
 5. Add enum types in `domain/[domain-name]/enums/` if needed
@@ -154,6 +259,16 @@ This prevents external instantiation while supporting JPA proxies and the builde
 - Initialize collections with `@Builder.Default` and `new ArrayList<>()`
 - For bidirectional relationships, maintain both sides of the association
 - Use fetch joins in repository queries when accessing related entities
+
+### Adding New API Endpoints
+
+1. Create DTOs in `domain/[domain-name]/dto/` package
+   - Nested static classes for different use cases (e.g., `Request.Create`, `Response.Detail`)
+   - Use `static from(Entity entity)` factory methods for entity-to-DTO conversion
+2. Implement service methods with proper transaction management
+3. Create controller endpoints returning `ApiResponse<T>`
+4. Use appropriate `SuccessCode` or `ErrorCode` enums
+5. Add Swagger annotations for documentation
 
 ### Enum Usage
 
@@ -166,5 +281,7 @@ Store enums as strings in the database using `@Enumerated(EnumType.STRING)` for 
 - **Build Tool**: Gradle
 - **Database**: MySQL with MySQL Connector/J
 - **ORM**: Spring Data JPA with Hibernate
+- **API Documentation**: Springdoc OpenAPI (Swagger UI)
+- **Monitoring**: Spring Boot Actuator
 - **Utility**: Lombok for boilerplate reduction
-- **Testing**: JUnit 5 with Spring Boot Test
+- **Testing**: JUnit 5 with Spring Boot Test, H2 Database for test environment
