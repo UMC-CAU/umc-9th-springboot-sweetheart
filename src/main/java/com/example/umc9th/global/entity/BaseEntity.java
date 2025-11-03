@@ -1,29 +1,29 @@
 package com.example.umc9th.global.entity;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
-
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
 @MappedSuperclass
-@EntityListeners(AuditingEntityListener.class)
 @Getter
-public class BaseEntity {
-
-  @CreatedDate
-  @Column(name = "created_at", nullable = false)
-  private LocalDateTime createdAt;
-
-  @LastModifiedDate
-  @Column(name = "updated_at", nullable = false)
-  private LocalDateTime updatedAt;
+public abstract class BaseEntity extends BaseTimeEntity {
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
+
+  /**
+   * Soft delete 처리
+   */
+  public void softDelete() {
+    this.deletedAt = LocalDateTime.now();
+  }
+
+  /**
+   * 삭제 여부 확인
+   */
+  public boolean isDeleted() {
+    return this.deletedAt != null;
+  }
 }
