@@ -20,8 +20,8 @@ public class SwaggerConfig {
 
     private Info apiInfo() {
         return new Info()
-                .title("UMC 9th Spring Boot API")
-                .description("UMC 9기 Spring Boot + JPA 학습 프로젝트 API 명세서")
+                .title("UMC 9th Spring Boot API - 김덕환")
+                .description("UMC 9기 Spring Boot API - 김덕환 작성")
                 .version("1.0.0");
     }
 
