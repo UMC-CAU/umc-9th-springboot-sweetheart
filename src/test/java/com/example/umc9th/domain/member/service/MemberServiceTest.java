@@ -197,6 +197,7 @@ class MemberServiceTest {
                     Member member = invocation.getArgument(0);
                     // ID를 부여한 채로 반환 (실제 DB처럼)
                     return Member.builder()
+                            .id(1L)  // ID 자동 생성 시뮬레이션
                             .name(member.getName())
                             .gender(member.getGender())
                             .birth(member.getBirth())
@@ -311,6 +312,7 @@ class MemberServiceTest {
      */
     private Member createMockMember(Long id, String name, String email) {
         return Member.builder()
+                .id(id)
                 .name(name)
                 .gender(Gender.MALE)
                 .birth(LocalDate.of(1990, 1, 1))

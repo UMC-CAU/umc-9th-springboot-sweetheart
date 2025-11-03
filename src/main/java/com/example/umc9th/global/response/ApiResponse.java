@@ -3,6 +3,7 @@ package com.example.umc9th.global.response;
 import com.example.umc9th.global.response.code.BaseCode;
 import com.example.umc9th.global.response.code.SuccessCode;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Getter;
 
@@ -13,6 +14,7 @@ import java.util.List;
 @JsonPropertyOrder({"isSuccess", "code", "message", "timestamp", "path", "traceId", "data", "errors"})
 public class ApiResponse<T> {
 
+    @JsonProperty("isSuccess")
     private final boolean isSuccess;
     private final String code;
     private final String message;
