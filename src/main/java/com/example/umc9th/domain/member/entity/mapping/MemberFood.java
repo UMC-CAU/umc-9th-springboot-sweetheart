@@ -2,6 +2,7 @@ package com.example.umc9th.domain.member.entity.mapping;
 
 import com.example.umc9th.domain.member.entity.Food;
 import com.example.umc9th.domain.member.entity.Member;
+import com.example.umc9th.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,7 +12,7 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Table(name = "member_food")
-public class MemberFood {
+public class MemberFood extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
