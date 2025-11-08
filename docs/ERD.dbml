@@ -1,0 +1,187 @@
+// 🗂️ UMC 9th SpringBoot Project - ERD
+// Database Markup Language (DBML) v3.0
+//
+// 사용법:
+// 1. https://dbdiagram.io/d 접속
+// 2. 이 파일 내용 복사/붙여넣기
+// 3. 자동으로 예쁜 ERD 생성!
+//
+// 설정 가능:
+// - 선 스타일 (직선/곡선)
+// - 색상 테마
+// - 글씨 크기
+// - 엔티티 위치 (드래그)
+// - PNG/PDF/SQL 내보내기
+
+// ===========================================
+// 회원 도메인 (Member Domain)
+// ===========================================
+
+Table member {
+  id bigint [pk, increment, note: '회원 ID']
+  name varchar(50) [not null, note: '이름']
+  gender varchar(10) [not null, default: 'NONE', note: 'MALE, FEMALE, NONE']
+  birth date [not null, note: '생년월일']
+  address varchar(255) [not null, note: '주소']
+  detail_address varchar(255) [not null, note: '상세주소']
+  social_uid varchar(255) [not null, note: '소셜 로그인 UID']
+  social_type varchar(20) [not null, note: 'KAKAO, NAVER, APPLE, GOOGLE']
+  point integer [not null, note: '포인트']
+  email varchar(100) [not null, note: '이메일']
+  phone_number varchar(20) [null, note: '휴대폰번호(선택, null이면 미인증)']
+  created_at timestamp [not null, default: `now()`, note: '가입일']
+  updated_at timestamp [not null, default: `now()`, note: '수정일']
+  deleted_at timestamp [null, note: '탈퇴일 (소프트 삭제)']
+
+  indexes {
+    email [unique]
+    social_uid [unique]
+  }
+
+  Note: '회원 정보. BaseEntity 상속으로 타임스탬프 및 소프트 삭제 지원'
+}
+
+Table food {
+  id bigint [pk, increment]
+  name varchar(20) [not null, note: 'KOREAN, CHINESE, JAPANESE, WESTERN, ETC']
+
+  Note: '음식 카테고리 (한식, 중식, 일식, 양식 등)'
+}
+
+Table member_food {
+  id bigint [pk, increment]
+  member_id bigint [not null, ref: > member.id]
+  food_id bigint [not null, ref: > food.id]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  indexes {
+    (member_id, food_id) [unique, note: '중복 선호 음식 방지']
+  }
+
+  Note: '회원이 선호하는 음식 매핑 테이블'
+}
+
+Table term {
+  id bigint [pk, increment]
+  name varchar(20) [not null, note: 'AGE, SERVICE, PRIVACY, LOCATION, MARKETING']
+
+  Note: '약관 종류 (연령, 서비스, 개인정보, 위치, 마케팅)'
+}
+
+Table member_term {
+  id bigint [pk, increment]
+  member_id bigint [not null, ref: > member.id]
+  term_id bigint [not null, ref: > term.id]
+
+  indexes {
+    (member_id, term_id) [unique, note: '중복 동의 방지']
+  }
+
+  Note: '회원이 동의한 약관 매핑 테이블'
+}
+
+// ===========================================
+// 가게 도메인 (Store Domain)
+// ===========================================
+
+Table location {
+  location_id bigint [pk, increment, note: '지역 ID']
+  name varchar(50) [not null, note: '지역명 (예: 서울, 경기, 부산)']
+
+  Note: '지역 정보'
+}
+
+Table store {
+  store_id bigint [pk, increment]
+  name varchar(100) [not null, note: '가게명']
+  manager_number bigint [not null, note: '관리자 번호']
+  detail_address varchar(255) [not null, note: '상세주소']
+  location_id bigint [not null, ref: > location.location_id]
+  food_id bigint [not null, ref: > food.id, note: '가게 음식 카테고리']
+
+  Note: '가게 정보. Food FK를 통해 한식당/중식당 등으로 분류'
+}
+
+// ===========================================
+// 미션 도메인 (Mission Domain)
+// ===========================================
+
+Table mission {
+  mission_id bigint [pk, increment]
+  name varchar(100) [not null, note: '미션명 (예: 반아향생미라탕 10,000원 이상 식사)']
+  deadline date [not null, note: '마감일']
+  conditional varchar(255) [not null, note: '미션 조건']
+  point integer [not null, note: '획득 포인트']
+  created_at timestamp [not null, default: `now()`]
+  store_id bigint [not null, ref: > store.store_id]
+
+  Note: '가게별 미션. 회원이 미션 완료 시 포인트 지급'
+}
+
+Table member_mission {
+  member_mission_id bigint [pk, increment]
+  status varchar(20) [not null, default: 'AVAILABLE', note: 'AVAILABLE, IN_PROGRESS, COMPLETED']
+  member_id bigint [not null, ref: > member.id]
+  mission_id bigint [not null, ref: > mission.mission_id]
+
+  indexes {
+    (member_id, mission_id) [unique, note: '회원당 미션 1번만 참여']
+  }
+
+  Note: '회원의 미션 참여 상태 관리'
+}
+
+// ===========================================
+// 리뷰 도메인 (Review Domain)
+// ===========================================
+
+Table review {
+  review_id bigint [pk, increment]
+  content text [not null, note: '리뷰 내용']
+  created_at timestamp [not null, default: `now()`]
+  star float [not null, note: '별점 (0.0 ~ 5.0)']
+  store_id bigint [not null, ref: > store.store_id]
+  user_id bigint [not null, ref: > member.id, note: '리뷰 작성자']
+
+  indexes {
+    store_id
+    user_id
+  }
+
+  Note: '가게 리뷰. 별점 및 내용 포함'
+}
+
+Table review_photo {
+  review_photo_id bigint [pk, increment]
+  photo_url varchar(500) [not null, note: '사진 URL']
+  review_id bigint [not null, ref: > review.review_id]
+
+  Note: '리뷰 첨부 사진. 1개 리뷰당 여러 사진 가능'
+}
+
+Table reply {
+  reply_id bigint [pk, increment]
+  content text [not null, note: '댓글 내용']
+  review_id bigint [not null, ref: > review.review_id]
+
+  Note: '리뷰에 대한 댓글 (사장님 답글 등)'
+}
+
+// ===========================================
+// 관계 요약 (Quick Reference)
+// ===========================================
+
+// 다대다 관계 (Many-to-Many)
+// - Member ↔ Food (via member_food)
+// - Member ↔ Term (via member_term)
+// - Member ↔ Mission (via member_mission)
+
+// 일대다 관계 (One-to-Many)
+// - Location → Store
+// - Food → Store (카테고리 분류)
+// - Store → Mission
+// - Store → Review
+// - Member → Review
+// - Review → ReviewPhoto
+// - Review → Reply
