@@ -3,6 +3,8 @@ package com.example.umc9th.domain.member.controller;
 import com.example.umc9th.domain.member.dto.MemberRequest;
 import com.example.umc9th.domain.member.dto.MemberResponse;
 import com.example.umc9th.domain.member.service.MemberService;
+import com.example.umc9th.domain.review.dto.ReviewDTO;
+import com.example.umc9th.domain.review.service.ReviewQueryService;
 import com.example.umc9th.global.response.ApiResponse;
 import com.example.umc9th.global.response.code.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +23,7 @@ import java.util.List;
 public class MemberController {
 
     private final MemberService memberService;
+    private final ReviewQueryService reviewQueryService;
 
     @Operation(summary = "모든 회원 조회", description = "등록된 모든 회원의 간단한 정보를 조회합니다.")
     @GetMapping
@@ -87,5 +90,38 @@ public class MemberController {
     ) {
         memberService.deleteMember(id);
         return ApiResponse.onSuccess(SuccessCode.MEMBER_DELETED);
+    }
+
+    @Operation(
+        summary = "특정 회원의 리뷰 조회",
+        description = """
+            회원이 작성한 리뷰를 조회합니다. (RESTful 자원 중심 설계)
+            - 가게별 필터: storeId 파라미터
+            - 가게 이름 검색: storeName 파라미터
+            - 별점 필터: minScore, maxScore 파라미터
+            - 조건 조합 가능
+            """
+    )
+    @GetMapping("/{memberId}/reviews")
+    public ApiResponse<List<ReviewDTO.MyReview>> getMemberReviews(
+            @Parameter(description = "회원 ID", required = true, example = "1")
+            @PathVariable Long memberId,
+
+            @Parameter(description = "가게 ID", example = "5")
+            @RequestParam(required = false) Long storeId,
+
+            @Parameter(description = "가게 이름 (부분 일치)", example = "반이학생")
+            @RequestParam(required = false) String storeName,
+
+            @Parameter(description = "최소 별점", example = "4.0")
+            @RequestParam(required = false) Float minScore,
+
+            @Parameter(description = "최대 별점", example = "4.99")
+            @RequestParam(required = false) Float maxScore
+    ) {
+        List<ReviewDTO.MyReview> reviews = reviewQueryService.getReviews(
+                memberId, storeId, storeName, minScore, maxScore
+        );
+        return ApiResponse.onSuccess(SuccessCode.OK, reviews);
     }
 }
