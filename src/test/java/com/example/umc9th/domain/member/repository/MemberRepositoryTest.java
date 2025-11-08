@@ -13,10 +13,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.context.annotation.Import;
 
 import com.example.umc9th.domain.member.entity.Member;
 import com.example.umc9th.domain.member.enums.Gender;
 import com.example.umc9th.global.auth.enums.SocialType;
+import com.example.umc9th.global.config.JpaAuditingConfig;
 
 /**
  * MemberRepository 테스트
@@ -26,11 +28,17 @@ import com.example.umc9th.global.auth.enums.SocialType;
  * - 내장 DB(H2) 자동 사용
  * - 각 테스트 후 자동 롤백 (DB 초기화)
  *
+ * @Import(JpaAuditingConfig.class):
+ * - JPA Auditing 활성화 (createdAt, updatedAt 자동 설정)
+ * - @DataJpaTest는 전체 Context를 로드하지 않으므로 필요
+ * - 전역 설정을 재사용하여 코드 중복 제거
+ *
  * 왜 Repository 테스트가 중요할까?
  * - 커스텀 쿼리가 많을수록 테스트 필요성 증가
  * - Fetch Join이 제대로 동작하는지 확인
  * - N+1 문제 발생 여부 확인
  */
+@Import(JpaAuditingConfig.class)
 @DataJpaTest
 @DisplayName("MemberRepository 테스트")
 class MemberRepositoryTest {
