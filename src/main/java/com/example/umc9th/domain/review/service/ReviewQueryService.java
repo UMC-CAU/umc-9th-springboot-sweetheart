@@ -1,6 +1,6 @@
 package com.example.umc9th.domain.review.service;
 
-import com.example.umc9th.domain.review.dto.ReviewDTO;
+import com.example.umc9th.domain.review.dto.ReviewResponse;
 import com.example.umc9th.domain.review.entity.Review;
 import com.example.umc9th.domain.review.repository.ReviewQueryRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public class ReviewQueryService {
      * @param maxScore 최대 별점 (nullable)
      * @return 리뷰 DTO 리스트
      */
-    public List<ReviewDTO.MyReview> getMyReviews(Long memberId, String storeName, Float minScore, Float maxScore) {
+    public List<ReviewResponse.MyReview> getMyReviews(Long memberId, String storeName, Float minScore, Float maxScore) {
         log.info("[getMyReviews] memberId={}, storeName={}, minScore={}, maxScore={}",
                 memberId, storeName, minScore, maxScore);
 
@@ -35,27 +35,27 @@ public class ReviewQueryService {
         log.info("[getMyReviews] result count: {}", reviews.size());
 
         return reviews.stream()
-                .map(ReviewDTO.MyReview::from)
+                .map(ReviewResponse.MyReview::from)
                 .toList();
     }
 
-    public List<ReviewDTO.MyReview> getMyReviewsByStarRange(Long memberId, Float minScore, Float maxScore) {
+    public List<ReviewResponse.MyReview> getMyReviewsByStarRange(Long memberId, Float minScore, Float maxScore) {
         log.info("[getMyReviewsByStarRange] memberId={}, range={}-{}", memberId, minScore, maxScore);
 
         List<Review> reviews = reviewQueryRepository.findMyReviewsByStarRange(memberId, minScore, maxScore);
 
         return reviews.stream()
-                .map(ReviewDTO.MyReview::from)
+                .map(ReviewResponse.MyReview::from)
                 .toList();
     }
 
-    public List<ReviewDTO.MyReview> getMyReviewsByStore(Long memberId, Long storeId) {
+    public List<ReviewResponse.MyReview> getMyReviewsByStore(Long memberId, Long storeId) {
         log.info("[getMyReviewsByStore] memberId={}, storeId={}", memberId, storeId);
 
         List<Review> reviews = reviewQueryRepository.findMyReviewsByStore(memberId, storeId);
 
         return reviews.stream()
-                .map(ReviewDTO.MyReview::from)
+                .map(ReviewResponse.MyReview::from)
                 .toList();
     }
 
@@ -69,7 +69,7 @@ public class ReviewQueryService {
      * @param maxScore 최대 별점 (nullable)
      * @return 리뷰 DTO 리스트
      */
-    public List<ReviewDTO.MyReview> getReviews(Long memberId, Long storeId, String storeName, Float minScore, Float maxScore) {
+    public List<ReviewResponse.MyReview> getReviews(Long memberId, Long storeId, String storeName, Float minScore, Float maxScore) {
         log.info("[getReviews] memberId={}, storeId={}, storeName={}, minScore={}, maxScore={}",
                 memberId, storeId, storeName, minScore, maxScore);
 
@@ -77,7 +77,7 @@ public class ReviewQueryService {
         log.info("[getReviews] result count: {}", reviews.size());
 
         return reviews.stream()
-                .map(ReviewDTO.MyReview::from)
+                .map(ReviewResponse.MyReview::from)
                 .toList();
     }
 }

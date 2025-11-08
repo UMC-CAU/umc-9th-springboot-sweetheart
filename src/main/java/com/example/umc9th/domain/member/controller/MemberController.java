@@ -3,7 +3,7 @@ package com.example.umc9th.domain.member.controller;
 import com.example.umc9th.domain.member.dto.MemberRequest;
 import com.example.umc9th.domain.member.dto.MemberResponse;
 import com.example.umc9th.domain.member.service.MemberService;
-import com.example.umc9th.domain.review.dto.ReviewDTO;
+import com.example.umc9th.domain.review.dto.ReviewResponse;
 import com.example.umc9th.domain.review.service.ReviewQueryService;
 import com.example.umc9th.global.response.ApiResponse;
 import com.example.umc9th.global.response.code.SuccessCode;
@@ -103,7 +103,7 @@ public class MemberController {
             """
     )
     @GetMapping("/{memberId}/reviews")
-    public ApiResponse<List<ReviewDTO.MyReview>> getMemberReviews(
+    public ApiResponse<List<ReviewResponse.MyReview>> getMemberReviews(
             @Parameter(description = "회원 ID", required = true, example = "1")
             @PathVariable Long memberId,
 
@@ -119,7 +119,7 @@ public class MemberController {
             @Parameter(description = "최대 별점", example = "4.99")
             @RequestParam(required = false) Float maxScore
     ) {
-        List<ReviewDTO.MyReview> reviews = reviewQueryService.getReviews(
+        List<ReviewResponse.MyReview> reviews = reviewQueryService.getReviews(
                 memberId, storeId, storeName, minScore, maxScore
         );
         return ApiResponse.onSuccess(SuccessCode.OK, reviews);

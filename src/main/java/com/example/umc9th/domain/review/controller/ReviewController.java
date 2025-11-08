@@ -1,6 +1,6 @@
 package com.example.umc9th.domain.review.controller;
 
-import com.example.umc9th.domain.review.dto.ReviewDTO;
+import com.example.umc9th.domain.review.dto.ReviewResponse;
 import com.example.umc9th.domain.review.service.ReviewQueryService;
 import com.example.umc9th.global.response.ApiResponse;
 import com.example.umc9th.global.response.code.SuccessCode;
@@ -39,7 +39,7 @@ public class ReviewController {
             """
     )
     @GetMapping
-    public ApiResponse<List<ReviewDTO.MyReview>> getReviews(
+    public ApiResponse<List<ReviewResponse.MyReview>> getReviews(
             @Parameter(description = "회원 ID", example = "1")
             @RequestParam(required = false) Long memberId,
 
@@ -55,7 +55,7 @@ public class ReviewController {
             @Parameter(description = "최대 별점", example = "4.99")
             @RequestParam(required = false) Float maxScore
     ) {
-        List<ReviewDTO.MyReview> reviews = reviewQueryService.getReviews(
+        List<ReviewResponse.MyReview> reviews = reviewQueryService.getReviews(
                 memberId, storeId, storeName, minScore, maxScore
         );
         return ApiResponse.onSuccess(SuccessCode.OK, reviews);
