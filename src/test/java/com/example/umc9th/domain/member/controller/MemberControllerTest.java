@@ -32,6 +32,7 @@ import com.example.umc9th.domain.member.dto.MemberRequest;
 import com.example.umc9th.domain.member.dto.MemberResponse;
 import com.example.umc9th.domain.member.enums.Gender;
 import com.example.umc9th.domain.member.service.MemberService;
+import com.example.umc9th.domain.review.service.ReviewQueryService;
 import com.example.umc9th.global.auth.enums.SocialType;
 import com.example.umc9th.global.exception.CustomException;
 import com.example.umc9th.global.exception.GlobalExceptionHandler;
@@ -88,6 +89,14 @@ class MemberControllerTest {
      */
     @MockitoBean
     private MemberService memberService;
+
+    /**
+     * ReviewQueryService Mock
+     * - MemberController가 ReviewQueryService를 주입받으므로 필요
+     * - @WebMvcTest는 Web 계층만 로드하므로 Service는 Mock으로 처리
+     */
+    @MockitoBean
+    private ReviewQueryService reviewQueryService;
 
 
     // ===== GET /api/members - 전체 회원 조회 =====
