@@ -21,10 +21,10 @@ spring:
 # Swagger UI 설정
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /v3/api-docs  # OpenAPI JSON 스펙 경로
     enabled: true
   swagger-ui:
-    path: /swagger-ui.html
+    path: /             # Swagger UI를 루트 경로에 배치!
     enabled: true
     operations-sorter: alpha
     tags-sorter: alpha
