@@ -1,0 +1,11 @@
+# 로컬 개발 환경 설정 (IntelliJ / run.sh)
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update  # 로컬: 엔티티 변경 시 자동 반영 (개발 편의)
+    show-sql: true  # 로컬: SQL 로그 활성화 (학습용)
+
+discord:
+  webhook:
+    enabled: false  # 로컬에서는 디스코드 알림 비활성화

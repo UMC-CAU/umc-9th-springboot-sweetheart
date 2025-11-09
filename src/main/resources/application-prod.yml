@@ -1,0 +1,12 @@
+# 운영 서버 환경 설정 (Mac Mini - Production)
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate  # ⚠️ 프로덕션: 스키마 검증만, 자동 변경 금지!
+    show-sql: false  # 프로덕션에서는 SQL 로그 비활성화 (성능)
+
+discord:
+  webhook:
+    enabled: true  # 운영 서버에서는 디스코드 알림 활성화
+    # url은 환경변수 DISCORD_WEBHOOK_URL로 설정
