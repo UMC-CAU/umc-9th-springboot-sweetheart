@@ -40,10 +40,14 @@ This is a Spring Boot 3.5.6 application built with Java 21, using Gradle as the 
   - `DB_URL`: JDBC connection URL (e.g., `jdbc:mysql://localhost:3306/umc9th`)
   - `DB_USER`: MySQL username
   - `DB_PW`: MySQL password
-- **JPA Settings**:
-  - `ddl-auto: update` - Schema auto-updates on application start
-  - `show-sql: true` - SQL queries logged to console
-  - Auditing enabled via `@EnableJpaAuditing` in main application class
+- **JPA Settings** (Profile별 다름):
+  - **Local** (`application-local.yml`):
+    - `ddl-auto: update` - 엔티티 변경 시 자동 반영 (개발 편의)
+    - `show-sql: true` - SQL 쿼리 로그 활성화 (학습용)
+  - **Prod** (`application-prod.yml`):
+    - `ddl-auto: validate` - 스키마 검증만, 자동 변경 금지 (안전)
+    - `show-sql: false` - SQL 로그 비활성화 (성능)
+- **Auditing**: `@EnableJpaAuditing` in main application class
 
 ## Architecture & Project Structure
 

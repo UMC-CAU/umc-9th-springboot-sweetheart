@@ -1,9 +1,13 @@
 package com.example.umc9th.global.exception;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.example.umc9th.global.notification.DiscordWebhookService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -19,8 +23,11 @@ import com.example.umc9th.global.response.code.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequiredArgsConstructor
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private final DiscordWebhookService discordWebhookService;
 
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiResponse<Void>> handleCustomException(
@@ -126,8 +133,31 @@ public class GlobalExceptionHandler {
         log.error("[Unexpected Exception] path: {}, traceId: {}, type: {}, message: {}",
                 path, traceId, e.getClass().getSimpleName(), e.getMessage(), e);
 
+        // 디스코드 웹훅으로 500 에러 알림 전송 (비동기)
+        sendDiscordNotification(path, e, traceId);
+
         return ResponseEntity
                 .status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus())
                 .body(ApiResponse.onFailure(ErrorCode.INTERNAL_SERVER_ERROR, path, traceId));
+    }
+
+    /**
+     * 디스코드로 에러 알림 전송
+     */
+    private void sendDiscordNotification(String path, Exception e, String traceId) {
+        try {
+            String errorMessage = e.getMessage();
+            String exceptionType = e.getClass().getSimpleName();
+            String timestamp = LocalDateTime.now()
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+            discordWebhookService.sendErrorNotification(
+                    path, errorMessage, exceptionType, traceId, timestamp
+            );
+        } catch (Exception notificationException) {
+            // 알림 전송 실패 시 로그만 남기고 원래 에러 처리는 계속 진행
+            log.error("[Discord Notification Failed] 디스코드 알림 전송 중 오류 발생: {}",
+                    notificationException.getMessage());
+        }
     }
 }
