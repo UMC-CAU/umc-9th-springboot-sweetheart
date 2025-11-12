@@ -9,6 +9,10 @@ import com.example.umc9th.global.response.ApiResponse;
 import com.example.umc9th.global.response.code.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +44,52 @@ public class MemberController {
     }
 
     @Operation(summary = "특정 회원 조회", description = "ID로 특정 회원의 기본 정보를 조회합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "회원 조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponse.class),
+                            examples = @ExampleObject(
+                                    name = "성공 예시",
+                                    value = """
+                                            {
+                                              "isSuccess": true,
+                                              "code": "MEMBER_200",
+                                              "message": "회원 조회 성공",
+                                              "timestamp": "2025-01-15T10:30:00",
+                                              "data": {
+                                                "id": 1,
+                                                "name": "홍길동",
+                                                "email": "hong@example.com"
+                                              }
+                                            }
+                                            """
+                            )
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "회원을 찾을 수 없음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "회원 없음",
+                                    value = """
+                                            {
+                                              "isSuccess": false,
+                                              "code": "MEMBER_404",
+                                              "message": "회원을 찾을 수 없습니다",
+                                              "timestamp": "2025-01-15T10:30:00",
+                                              "path": "/api/members/999",
+                                              "traceId": "abc-123-def"
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
     @GetMapping("/{id}")
     public ApiResponse<MemberResponse.Basic> getMemberById(
             @Parameter(description = "회원 ID", example = "1") @PathVariable Long id
