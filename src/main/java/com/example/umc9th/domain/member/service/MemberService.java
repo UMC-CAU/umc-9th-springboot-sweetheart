@@ -65,10 +65,19 @@ public class MemberService {
         log.info("[MemberService.createMember] 회원 생성 - name: {}, email: {}",
                 request.getName(), request.getEmail());
 
-        // TODO: 실제 프로젝트에서는 여기에 추가 로직이 필요합니다:
         // 1. 중복 이메일 체크
+        if (memberRepository.existsByEmail(request.getEmail())) {
+            log.warn("[MemberService.createMember] 중복된 이메일 - email: {}", request.getEmail());
+            throw new CustomException(ErrorCode.MEMBER_DUPLICATE_EMAIL);
+        }
+
         // 2. 소셜 UID 중복 체크
-        // 3. Food 엔티티 조회 및 MemberFood 매핑
+        if (memberRepository.existsBySocialUid(request.getSocialUid())) {
+            log.warn("[MemberService.createMember] 중복된 소셜 UID - socialUid: {}", request.getSocialUid());
+            throw new CustomException(ErrorCode.MEMBER_DUPLICATE_SOCIAL_UID);
+        }
+
+        // TODO: 3. Food 엔티티 조회 및 MemberFood 매핑 (추후 구현)
 
         Member member = Member.builder()
                 .name(request.getName())
@@ -96,8 +105,22 @@ public class MemberService {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        // TODO: Member 엔티티에 update 메서드를 추가하여 사용하는 것이 권장됩니다
-        // member.updateInfo(request.getName(), request.getEmail(), ...);
+        // 이메일 변경 시 중복 체크 (다른 회원이 사용 중인지 확인)
+        if (request.getEmail() != null && !request.getEmail().equals(member.getEmail())) {
+            if (memberRepository.existsByEmail(request.getEmail())) {
+                log.warn("[MemberService.updateMember] 중복된 이메일 - email: {}", request.getEmail());
+                throw new CustomException(ErrorCode.MEMBER_DUPLICATE_EMAIL);
+            }
+        }
+
+        // JPA 더티 체킹을 활용한 업데이트 (엔티티의 값을 변경하면 자동으로 UPDATE 쿼리 실행)
+        member.updateInfo(
+                request.getName(),
+                request.getEmail(),
+                request.getPhoneNumber(),
+                request.getAddress(),
+                request.getDetailAddress()
+        );
 
         log.info("[MemberService.updateMember] 회원 수정 완료 - ID: {}", id);
 

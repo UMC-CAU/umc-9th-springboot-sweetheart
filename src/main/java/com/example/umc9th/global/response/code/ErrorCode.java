@@ -27,6 +27,8 @@ public enum ErrorCode implements BaseCode {
     // Member
     MEMBER_NOT_FOUND(404, "MEMBER_404", "회원을 찾을 수 없습니다"),
     MEMBER_ALREADY_EXISTS(409, "MEMBER_409", "이미 존재하는 회원입니다"),
+    MEMBER_DUPLICATE_EMAIL(409, "MEMBER_409", "이미 사용 중인 이메일입니다"),
+    MEMBER_DUPLICATE_SOCIAL_UID(409, "MEMBER_409", "이미 가입된 소셜 계정입니다"),
     MEMBER_NAME_EMPTY(400, "MEMBER_400", "회원 이름은 필수입니다"),
     MEMBER_INVALID_EMAIL(400, "MEMBER_400", "올바른 이메일 형식이 아닙니다"),
 
