@@ -98,6 +98,14 @@ class MemberControllerTest {
     @MockitoBean
     private ReviewQueryService reviewQueryService;
 
+    /**
+     * DiscordWebhookService Mock
+     * - GlobalExceptionHandler가 DiscordWebhookService를 주입받으므로 필요
+     * - @WebMvcTest는 Web 계층만 로드하므로 Service는 Mock으로 처리
+     */
+    @MockitoBean
+    private com.example.umc9th.global.notification.DiscordWebhookService discordWebhookService;
+
 
     // ===== GET /api/members - 전체 회원 조회 =====
 

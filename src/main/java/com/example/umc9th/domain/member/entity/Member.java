@@ -81,4 +81,59 @@ public class Member extends BaseEntity {
     @Builder.Default
     private List<MemberTerm> memberTermList = new ArrayList<>();
 
+    /**
+     * 회원 정보 수정 메서드
+     * JPA 더티 체킹을 활용하여 변경 감지 후 자동으로 UPDATE 쿼리 실행
+     *
+     * @param name 이름 (null이면 변경 안 함)
+     * @param email 이메일 (null이면 변경 안 함)
+     * @param phoneNumber 전화번호 (null이면 변경 안 함)
+     * @param address 주소 (null이면 변경 안 함)
+     * @param detailAddress 상세 주소 (null이면 변경 안 함)
+     */
+    public void updateInfo(String name, String email, String phoneNumber, String address, String detailAddress) {
+        if (name != null && !name.isBlank()) {
+            this.name = name;
+        }
+        if (email != null && !email.isBlank()) {
+            this.email = email;
+        }
+        if (phoneNumber != null) {
+            this.phoneNumber = phoneNumber;
+        }
+        if (address != null && !address.isBlank()) {
+            this.address = address;
+        }
+        if (detailAddress != null && !detailAddress.isBlank()) {
+            this.detailAddress = detailAddress;
+        }
+    }
+
+    /**
+     * 포인트 추가 메서드
+     *
+     * @param points 추가할 포인트
+     */
+    public void addPoints(int points) {
+        if (points < 0) {
+            throw new IllegalArgumentException("포인트는 0 이상이어야 합니다");
+        }
+        this.point += points;
+    }
+
+    /**
+     * 포인트 차감 메서드
+     *
+     * @param points 차감할 포인트
+     */
+    public void deductPoints(int points) {
+        if (points < 0) {
+            throw new IllegalArgumentException("포인트는 0 이상이어야 합니다");
+        }
+        if (this.point < points) {
+            throw new IllegalArgumentException("포인트가 부족합니다");
+        }
+        this.point -= points;
+    }
+
 }

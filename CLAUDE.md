@@ -40,10 +40,14 @@ This is a Spring Boot 3.5.6 application built with Java 21, using Gradle as the 
   - `DB_URL`: JDBC connection URL (e.g., `jdbc:mysql://localhost:3306/umc9th`)
   - `DB_USER`: MySQL username
   - `DB_PW`: MySQL password
-- **JPA Settings**:
-  - `ddl-auto: update` - Schema auto-updates on application start
-  - `show-sql: true` - SQL queries logged to console
-  - Auditing enabled via `@EnableJpaAuditing` in main application class
+- **JPA Settings** (Profile별 다름):
+  - **Local** (`application-local.yml`):
+    - `ddl-auto: update` - 엔티티 변경 시 자동 반영 (개발 편의)
+    - `show-sql: true` - SQL 쿼리 로그 활성화 (학습용)
+  - **Prod** (`application-prod.yml`):
+    - `ddl-auto: validate` - 스키마 검증만, 자동 변경 금지 (안전)
+    - `show-sql: false` - SQL 로그 비활성화 (성능)
+- **Auditing**: `@EnableJpaAuditing` in main application class
 
 ## Architecture & Project Structure
 
@@ -54,15 +58,17 @@ The project follows a domain-driven structure under `com.example.umc9th`:
 ```
 domain/
 ├── member/     - Member management domain
-├── mission/    - Mission domain (placeholder)
-├── review/     - Review domain (placeholder)
-└── store/      - Store domain (placeholder)
+├── mission/    - Mission domain
+├── review/     - Review domain
+├── store/      - Store domain
+└── location/   - Location domain
 
 global/
-├── entity/     - Shared base entities
-├── response/   - Unified API response structure
-├── exception/  - Global exception handling
-└── config/     - Application configuration
+├── entity/       - Shared base entities
+├── response/     - Unified API response structure
+├── exception/    - Global exception handling
+├── config/       - Application configuration
+└── notification/ - Discord webhook for error notifications
 ```
 
 ### Layer Organization (within each domain)
@@ -72,8 +78,10 @@ Each domain module follows this standard layered structure:
 - **entity/** - JPA entities and mapping classes
   - **mapping/** - Join table entities for many-to-many relationships
 - **enums/** - Enum types for domain-specific constants
-- **repository/** - Spring Data JPA repositories
+- **repository/** - Spring Data JPA repositories (standard CRUD)
+  - **[Domain]QueryRepository** - QueryDSL repositories for complex queries
 - **service/** - Business logic layer
+  - **[Domain]QueryService** - Read-only service for query operations (optional pattern)
 - **controller/** - REST API endpoints
 - **dto/** - Data transfer objects
 
@@ -120,7 +128,54 @@ List<Member> findAllWithFoods();
 
 Always use these fetch join methods when accessing member food preferences to avoid N+1 problems.
 
-#### 2. Base Entity Pattern
+#### 2. QueryDSL Integration
+
+The project uses QueryDSL for complex, type-safe dynamic queries:
+
+**Configuration**:
+- `QueryDslConfig` provides `JPAQueryFactory` bean
+- Q-classes are auto-generated in `build/generated/querydsl/`
+- Use `./gradlew clean build` to regenerate Q-classes after entity changes
+
+**Repository Pattern**:
+- Standard repositories: `MemberRepository extends JpaRepository`
+- QueryDSL repositories: `StoreQueryRepository` (uses `JPAQueryFactory`)
+
+**Example Usage** (from `StoreQueryRepository`):
+```java
+@Repository
+@RequiredArgsConstructor
+public class StoreQueryRepository {
+    private final JPAQueryFactory queryFactory;
+
+    public List<Store> searchStores(List<String> regions, String searchName, String sortBy) {
+        return queryFactory
+                .selectFrom(store)
+                .distinct()
+                .leftJoin(store.location, location).fetchJoin()  // N+1 prevention
+                .leftJoin(store.food, food).fetchJoin()
+                .where(
+                    regionIn(regions),      // Dynamic condition
+                    nameSearch(searchName)
+                )
+                .orderBy(getSortOrder(sortBy))  // Dynamic sorting
+                .fetch();
+    }
+
+    // BooleanExpression for dynamic conditions
+    private BooleanExpression regionIn(List<String> regions) {
+        return (regions == null || regions.isEmpty()) ? null : location.name.in(regions);
+    }
+}
+```
+
+**Key QueryDSL Patterns**:
+- Use `BooleanExpression` for dynamic `where` conditions (returns `null` to skip)
+- Use `OrderSpecifier<?>[]` for dynamic sorting
+- Always use `fetchJoin()` for associations to prevent N+1
+- Use `distinct()` when fetching collections to avoid duplicates
+
+#### 3. Base Entity Pattern
 
 The codebase uses a two-tier base entity hierarchy:
 
@@ -136,7 +191,7 @@ The codebase uses a two-tier base entity hierarchy:
 
 All time-tracked entities should extend one of these base entities. Use `BaseEntity` if soft delete is needed, otherwise use `BaseTimeEntity`.
 
-#### 3. Unified API Response Structure
+#### 4. Unified API Response Structure
 
 All API responses follow a consistent structure using `ApiResponse<T>`:
 
@@ -176,7 +231,13 @@ return ApiResponse.ok(data);          // Uses SuccessCode.OK
 return ApiResponse.created(data);     // Uses SuccessCode.CREATED
 ```
 
-#### 4. Error Handling Architecture
+**Pagination Support**:
+Use `PagedResponse<T>` for paginated results:
+```java
+return PagedResponse.of(SuccessCode.REVIEW_OK, content, page);
+```
+
+#### 5. Error Handling Architecture
 
 **GlobalExceptionHandler** (`@RestControllerAdvice`) handles all exceptions consistently:
 
@@ -185,7 +246,7 @@ return ApiResponse.created(data);     // Uses SuccessCode.CREATED
 - **MissingServletRequestParameterException** - Missing required parameters
 - **MethodArgumentTypeMismatchException** - Type conversion errors
 - **NoHandlerFoundException** - 404 Not Found
-- **Exception** - Catch-all for unexpected errors
+- **Exception** - Catch-all for unexpected errors (sends Discord notification)
 
 **Custom Error Codes:**
 - Defined in `ErrorCode` enum implementing `BaseCode` interface
@@ -203,7 +264,13 @@ throw new CustomException(ErrorCode.MEMBER_NOT_FOUND);
 - Success codes in `SuccessCode` enum
 - Error codes in `ErrorCode` enum
 
-#### 5. Lombok Conventions
+**Discord Webhook Integration**:
+- Unexpected 500 errors automatically send notifications to Discord
+- Configured via `discord.webhook.url` and `discord.webhook.enabled` in application.yml
+- Runs asynchronously to not block error response
+- Disabled in local environment, enabled in production
+
+#### 6. Lombok Conventions
 
 All entities follow this Lombok pattern:
 ```java
@@ -216,7 +283,7 @@ All entities follow this Lombok pattern:
 
 This prevents external instantiation while supporting JPA proxies and the builder pattern.
 
-#### 6. Service Layer Patterns
+#### 7. Service Layer Patterns
 
 **Transaction Management:**
 - Class-level `@Transactional(readOnly = true)` for read operations
@@ -230,10 +297,15 @@ This prevents external instantiation while supporting JPA proxies and the builde
 - All service methods log entry points with relevant parameters
 - Use SLF4J with pattern: `log.info("[ClassName.methodName] Description - param: {}", value)`
 
-#### 7. API Documentation (Swagger)
+**QueryService Pattern** (Optional):
+- Separate read-only services for complex query operations
+- Example: `ReviewQueryService`, `StoreQueryService`
+- Keeps main service focused on write operations and simple reads
 
-- Swagger UI available at `/swagger-ui.html`
-- API docs available at `/api-docs`
+#### 8. API Documentation (Swagger)
+
+- Swagger UI available at `/swagger-ui.html` (or root `/` depending on config)
+- API docs available at `/v3/api-docs`
 - Use `@Tag` for controller-level descriptions
 - Use `@Operation` for endpoint-level descriptions
 - Use `@Parameter` for parameter-level descriptions
@@ -252,6 +324,7 @@ This prevents external instantiation while supporting JPA proxies and the builde
 3. Use appropriate fetch strategies (`LAZY` preferred for associations)
 4. Create corresponding repository with fetch join queries for N+1 prevention
 5. Add enum types in `domain/[domain-name]/enums/` if needed
+6. Rebuild project to generate QueryDSL Q-classes: `./gradlew clean build`
 
 ### Working with Relationships
 
@@ -259,6 +332,7 @@ This prevents external instantiation while supporting JPA proxies and the builde
 - Initialize collections with `@Builder.Default` and `new ArrayList<>()`
 - For bidirectional relationships, maintain both sides of the association
 - Use fetch joins in repository queries when accessing related entities
+- For complex queries, create a QueryRepository with QueryDSL
 
 ### Adding New API Endpoints
 
@@ -266,13 +340,28 @@ This prevents external instantiation while supporting JPA proxies and the builde
    - Nested static classes for different use cases (e.g., `Request.Create`, `Response.Detail`)
    - Use `static from(Entity entity)` factory methods for entity-to-DTO conversion
 2. Implement service methods with proper transaction management
-3. Create controller endpoints returning `ApiResponse<T>`
+3. Create controller endpoints returning `ApiResponse<T>` or `PagedResponse<T>`
 4. Use appropriate `SuccessCode` or `ErrorCode` enums
 5. Add Swagger annotations for documentation
+
+### Using QueryDSL
+
+1. Ensure entity is built and Q-class exists in `build/generated/querydsl/`
+2. Create `[Domain]QueryRepository` class with `JPAQueryFactory` dependency
+3. Import static Q-classes: `import static com.example.umc9th.domain.store.entity.QStore.store;`
+4. Use `BooleanExpression` methods for dynamic conditions
+5. Always use `fetchJoin()` for associations
+6. Use `distinct()` when fetching collections
 
 ### Enum Usage
 
 Store enums as strings in the database using `@Enumerated(EnumType.STRING)` for better readability and database migration safety.
+
+### Async Operations
+
+- Async processing is enabled via `@EnableAsync` in `AsyncConfig`
+- Use `@Async` annotation for async methods (e.g., Discord notifications)
+- Configured with custom thread pool for better control
 
 ## Technology Stack
 
@@ -281,7 +370,9 @@ Store enums as strings in the database using `@Enumerated(EnumType.STRING)` for 
 - **Build Tool**: Gradle
 - **Database**: MySQL with MySQL Connector/J
 - **ORM**: Spring Data JPA with Hibernate
+- **Query DSL**: QueryDSL (OpenFeign version 7.0)
 - **API Documentation**: Springdoc OpenAPI (Swagger UI)
 - **Monitoring**: Spring Boot Actuator
+- **Notifications**: Discord Webhook (async)
 - **Utility**: Lombok for boilerplate reduction
 - **Testing**: JUnit 5 with Spring Boot Test, H2 Database for test environment
