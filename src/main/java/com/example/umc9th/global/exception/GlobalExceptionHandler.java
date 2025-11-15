@@ -122,6 +122,21 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.onFailure(ErrorCode.NOT_FOUND, errorMessage));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(
+            IllegalArgumentException e,
+            HttpServletRequest request) {
+
+        String path = request.getRequestURI();
+        String traceId = request.getHeader("X-Trace-ID");
+
+        log.error("[Illegal Argument] path: {}, traceId: {}, message: {}", path, traceId, e.getMessage());
+
+        return ResponseEntity
+                .status(ErrorCode.BAD_REQUEST.getStatus())
+                .body(ApiResponse.onFailure(ErrorCode.BAD_REQUEST, e.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleAllExceptions(
             Exception e,
