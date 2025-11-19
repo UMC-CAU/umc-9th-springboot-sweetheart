@@ -2,6 +2,7 @@ package com.example.umc9th.domain.review.dto;
 
 import com.example.umc9th.domain.review.entity.Review;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,6 +13,29 @@ import java.time.LocalDateTime;
  * Review 도메인 응답 DTO 모음
  */
 public class ReviewResponse {
+
+    /**
+     * 리뷰 작성 응답 DTO
+     */
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    @Schema(description = "리뷰 작성 응답")
+    public static class CreateReview {
+        @Schema(description = "생성된 리뷰 ID", example = "1")
+        private Long reviewId;
+
+        @Schema(description = "리뷰 작성 시간", example = "2025-01-15T14:30:00")
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+        private LocalDateTime createdAt;
+
+        public static CreateReview from(Review review) {
+            return CreateReview.builder()
+                    .reviewId(review.getId())
+                    .createdAt(review.getCreatedAt())
+                    .build();
+        }
+    }
 
     /**
      * 내 리뷰 조회 응답 DTO

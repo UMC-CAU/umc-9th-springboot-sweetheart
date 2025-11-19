@@ -1,6 +1,7 @@
 package com.example.umc9th.domain.store.dto;
 
 import com.example.umc9th.domain.store.entity.Store;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -9,6 +10,32 @@ import lombok.Getter;
  * Store 도메인 응답 DTO 모음
  */
 public class StoreResponse {
+
+    /**
+     * 가게 추가 응답 DTO
+     */
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    @Schema(description = "가게 추가 응답")
+    public static class CreateStore {
+        @Schema(description = "생성된 가게 ID", example = "1")
+        private Long storeId;
+
+        @Schema(description = "가게 이름", example = "반이학생")
+        private String name;
+
+        @Schema(description = "지역명", example = "강남구")
+        private String region;
+
+        public static CreateStore from(Store store) {
+            return CreateStore.builder()
+                    .storeId(store.getId())
+                    .name(store.getName())
+                    .region(store.getLocation() != null ? store.getLocation().getName() : null)
+                    .build();
+        }
+    }
 
     /**
      * 가게 검색 결과 응답 DTO

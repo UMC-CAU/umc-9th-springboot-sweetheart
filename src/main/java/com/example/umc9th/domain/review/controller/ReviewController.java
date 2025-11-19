@@ -1,24 +1,48 @@
 package com.example.umc9th.domain.review.controller;
 
+import com.example.umc9th.domain.review.dto.ReviewRequest;
 import com.example.umc9th.domain.review.dto.ReviewResponse;
+import com.example.umc9th.domain.review.service.ReviewCommandService;
 import com.example.umc9th.domain.review.service.ReviewQueryService;
 import com.example.umc9th.global.response.ApiResponse;
 import com.example.umc9th.global.response.code.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "리뷰 관리", description = "리뷰 조회 API (통합)")
+@Tag(name = "리뷰 관리", description = "리뷰 조회/작성 API")
 @RestController
 @RequestMapping("/api/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
 
     private final ReviewQueryService reviewQueryService;
+    private final ReviewCommandService reviewCommandService;
+
+    @Operation(
+            summary = "가게에 리뷰 추가하기",
+            description = """
+                가게에 새로운 리뷰를 작성합니다.
+
+                **Validation:**
+                - storeId: 가게 ID 필수, DB에 존재해야 함
+                - memberId: 회원 ID 필수, DB에 존재해야 함 (현재는 하드코딩, 추후 인증에서 자동 추출)
+                - content: 리뷰 내용 필수, 10자 이상 500자 이하
+                - star: 별점 필수, 0.0 ~ 5.0 범위
+                """
+    )
+    @PostMapping
+    public ApiResponse<ReviewResponse.CreateReview> createReview(
+            @Valid @RequestBody ReviewRequest.CreateReviewDTO request
+    ) {
+        ReviewResponse.CreateReview response = reviewCommandService.createReview(request);
+        return ApiResponse.onSuccess(SuccessCode.CREATED, response);
+    }
 
     @Operation(
         summary = "리뷰 통합 조회 (RESTful)",
