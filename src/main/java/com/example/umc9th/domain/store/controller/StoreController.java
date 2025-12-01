@@ -2,19 +2,22 @@ package com.example.umc9th.domain.store.controller;
 
 import com.example.umc9th.domain.review.dto.ReviewResponse;
 import com.example.umc9th.domain.review.service.ReviewQueryService;
+import com.example.umc9th.domain.store.dto.StoreRequest;
 import com.example.umc9th.domain.store.dto.StoreResponse;
+import com.example.umc9th.domain.store.service.StoreCommandService;
 import com.example.umc9th.domain.store.service.StoreQueryService;
 import com.example.umc9th.global.response.ApiResponse;
 import com.example.umc9th.global.response.code.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Store", description = "가게 관리 API")
+@Tag(name = "가게 관리", description = "가게 조회/추가 API")
 @RestController
 @RequestMapping("/api/stores")
 @RequiredArgsConstructor
@@ -22,6 +25,28 @@ public class StoreController {
 
     private final ReviewQueryService reviewQueryService;
     private final StoreQueryService storeQueryService;
+    private final StoreCommandService storeCommandService;
+
+    @Operation(
+            summary = "특정 지역에 가게 추가하기",
+            description = """
+                특정 지역에 새로운 가게를 추가합니다.
+
+                **Validation:**
+                - name: 가게 이름 필수, 1자 이상 100자 이하
+                - managerNumber: 매니저 전화번호 필수
+                - detailAddress: 상세 주소 필수, 5자 이상 200자 이하
+                - locationId: 지역 ID 필수, DB에 존재해야 함
+                - foodId: 음식 카테고리 ID 필수, DB에 존재해야 함
+                """
+    )
+    @PostMapping
+    public ApiResponse<StoreResponse.CreateStore> createStore(
+            @Valid @RequestBody StoreRequest.CreateStoreDTO request
+    ) {
+        StoreResponse.CreateStore response = storeCommandService.createStore(request);
+        return ApiResponse.onSuccess(SuccessCode.CREATED, response);
+    }
 
     @Operation(
         summary = "가게 검색 (지역 필터링 + 이름 검색 + 정렬)",

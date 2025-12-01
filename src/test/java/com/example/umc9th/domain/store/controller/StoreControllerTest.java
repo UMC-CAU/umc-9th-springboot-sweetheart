@@ -28,9 +28,15 @@ import com.example.umc9th.domain.review.dto.ReviewResponse;
 import com.example.umc9th.domain.review.service.ReviewQueryService;
 import com.example.umc9th.domain.store.dto.StoreResponse;
 import com.example.umc9th.domain.store.service.StoreQueryService;
+import com.example.umc9th.domain.store.service.StoreCommandService;
 import com.example.umc9th.global.exception.CustomException;
 import com.example.umc9th.global.exception.GlobalExceptionHandler;
 import com.example.umc9th.global.response.code.ErrorCode;
+import com.example.umc9th.global.validation.validator.LocationExistValidator;
+import com.example.umc9th.global.validation.validator.FoodExistValidator;
+import com.example.umc9th.domain.location.repository.LocationRepository;
+import com.example.umc9th.domain.member.repository.FoodRepository;
+import org.springframework.context.annotation.Import;
 
 /**
  * StoreController 테스트
@@ -65,6 +71,10 @@ import com.example.umc9th.global.response.code.ErrorCode;
         StoreController.class,
         GlobalExceptionHandler.class  // 예외 처리 테스트를 위해 포함
 })
+@Import({
+        LocationExistValidator.class,  // @ExistLocation 검증을 위한 Validator
+        FoodExistValidator.class        // @ExistFood 검증을 위한 Validator
+})
 @DisplayName("StoreController 테스트")
 class StoreControllerTest {
 
@@ -98,6 +108,27 @@ class StoreControllerTest {
      */
     @MockitoBean
     private com.example.umc9th.global.notification.DiscordWebhookService discordWebhookService;
+
+    /**
+     * StoreCommandService Mock
+     * - StoreController의 POST 엔드포인트에서 사용
+     */
+    @MockitoBean
+    private StoreCommandService storeCommandService;
+
+    /**
+     * LocationRepository Mock
+     * - LocationExistValidator가 LocationRepository를 주입받으므로 필요
+     */
+    @MockitoBean
+    private LocationRepository locationRepository;
+
+    /**
+     * FoodRepository Mock
+     * - FoodExistValidator가 FoodRepository를 주입받으므로 필요
+     */
+    @MockitoBean
+    private FoodRepository foodRepository;
 
 
     // ===== GET /api/stores/search - 가게 검색 (11개 테스트) =====
