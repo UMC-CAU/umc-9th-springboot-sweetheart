@@ -1,7 +1,10 @@
 package com.example.umc9th.domain.mission.repository;
 
+import com.example.umc9th.domain.member.entity.Member;
 import com.example.umc9th.domain.mission.entity.mapping.MemberMission;
 import com.example.umc9th.domain.mission.enums.MissionStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,31 +14,45 @@ import java.util.List;
 
 public interface MemberMissionRepository extends JpaRepository<MemberMission, Long> {
 
-    @EntityGraph(attributePaths = {"mission", "mission.store", "mission.store.food"})
-    @Query("SELECT mm FROM MemberMission mm " +
-           "WHERE mm.member.id = :memberId " +
-           "AND mm.status IN ('AVAILABLE', 'IN_PROGRESS') " +
-           "ORDER BY mm.mission.deadline ASC")
-    List<MemberMission> findAvailableAndInProgressMissions(@Param("memberId") Long memberId);
+       @EntityGraph(attributePaths = { "mission", "mission.store", "mission.store.food" })
+       @Query("SELECT mm FROM MemberMission mm " +
+                     "WHERE mm.member.id = :memberId " +
+                     "AND mm.status IN ('AVAILABLE', 'IN_PROGRESS') " +
+                     "ORDER BY mm.mission.deadline ASC")
+       List<MemberMission> findAvailableAndInProgressMissions(@Param("memberId") Long memberId);
 
-    @EntityGraph(attributePaths = {"mission", "mission.store", "mission.store.food"})
-    @Query("SELECT mm FROM MemberMission mm " +
-           "WHERE mm.member.id = :memberId " +
-           "AND mm.status = :status " +
-           "AND mm.id > :lastId " +
-           "ORDER BY mm.id ASC")
-    List<MemberMission> findByMemberAndStatusWithPagination(
-            @Param("memberId") Long memberId,
-            @Param("status") MissionStatus status,
-            @Param("lastId") Long lastId,
-            @Param("pageSize") int pageSize
-    );
+       @EntityGraph(attributePaths = { "mission", "mission.store", "mission.store.food" })
+       @Query("SELECT mm FROM MemberMission mm " +
+                     "WHERE mm.member.id = :memberId " +
+                     "AND mm.status = :status " +
+                     "AND mm.id > :lastId " +
+                     "ORDER BY mm.id ASC")
+       List<MemberMission> findByMemberAndStatusWithPagination(
+                     @Param("memberId") Long memberId,
+                     @Param("status") MissionStatus status,
+                     @Param("lastId") Long lastId,
+                     @Param("pageSize") int pageSize);
 
-    @Query("SELECT COUNT(mm) FROM MemberMission mm " +
-           "WHERE mm.member.id = :memberId " +
-           "AND mm.status = :status")
-    Long countByMemberAndStatus(
-            @Param("memberId") Long memberId,
-            @Param("status") MissionStatus status
-    );
+       @Query("SELECT COUNT(mm) FROM MemberMission mm " +
+                     "WHERE mm.member.id = :memberId " +
+                     "AND mm.status = :status")
+       Long countByMemberAndStatus(
+                     @Param("memberId") Long memberId,
+                     @Param("status") MissionStatus status);
+
+       /**
+        * 회원의 특정 상태 미션 목록 조회 (Page 방식)
+        * COUNT 쿼리를 실행하여 전체 개수 제공
+        */
+       @EntityGraph(attributePaths = { "mission", "mission.store" })
+       Page<MemberMission> findAllByMemberAndStatus(Member member, MissionStatus status, Pageable pageable);
+
+       /**
+        * 회원의 특정 상태 미션 목록 조회 (Slice 방식)
+        * COUNT 쿼리를 실행하지 않아 성능 우수
+        * 무한 스크롤에 적합
+        */
+       @EntityGraph(attributePaths = { "mission", "mission.store" })
+       org.springframework.data.domain.Slice<MemberMission> findSliceByMemberAndStatus(Member member,
+                     MissionStatus status, Pageable pageable);
 }

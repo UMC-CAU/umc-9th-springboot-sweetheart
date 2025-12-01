@@ -2,7 +2,11 @@ package com.example.umc9th.domain.member.service;
 
 import com.example.umc9th.domain.member.dto.MemberRequest;
 import com.example.umc9th.domain.member.dto.MemberResponse;
+import com.example.umc9th.domain.member.entity.Food;
 import com.example.umc9th.domain.member.entity.Member;
+import com.example.umc9th.domain.member.entity.mapping.MemberFood;
+import com.example.umc9th.domain.member.repository.FoodRepository;
+import com.example.umc9th.domain.member.repository.MemberFoodRepository;
 import com.example.umc9th.domain.member.repository.MemberRepository;
 import com.example.umc9th.global.exception.CustomException;
 import com.example.umc9th.global.response.code.ErrorCode;
@@ -21,6 +25,8 @@ import java.util.stream.Collectors;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final FoodRepository foodRepository;
+    private final MemberFoodRepository memberFoodRepository;
 
     public List<MemberResponse.Summary> getAllMembers() {
         log.info("[MemberService.getAllMembers] 모든 회원 조회");
@@ -77,8 +83,7 @@ public class MemberService {
             throw new CustomException(ErrorCode.MEMBER_DUPLICATE_SOCIAL_UID);
         }
 
-        // TODO: 3. Food 엔티티 조회 및 MemberFood 매핑 (추후 구현)
-
+        // 3. Member 엔티티 생성 및 저장
         Member member = Member.builder()
                 .name(request.getName())
                 .gender(request.getGender())
@@ -94,6 +99,26 @@ public class MemberService {
 
         Member savedMember = memberRepository.save(member);
         log.info("[MemberService.createMember] 회원 생성 완료 - ID: {}", savedMember.getId());
+
+        // 4. Food 엔티티 조회 및 MemberFood 매핑 (선호 음식 설정)
+        if (request.getFoodPreferences() != null && !request.getFoodPreferences().isEmpty()) {
+            log.info("[MemberService.createMember] 선호 음식 매핑 시작 - count: {}", request.getFoodPreferences().size());
+
+            // FoodName 리스트로 Food 엔티티 조회
+            List<Food> foods = foodRepository.findByNameIn(request.getFoodPreferences());
+
+            // MemberFood 매핑 엔티티 생성
+            List<MemberFood> memberFoods = foods.stream()
+                    .map(food -> MemberFood.builder()
+                            .member(savedMember)
+                            .food(food)
+                            .build())
+                    .collect(Collectors.toList());
+
+            // MemberFood 저장
+            memberFoodRepository.saveAll(memberFoods);
+            log.info("[MemberService.createMember] 선호 음식 매핑 완료 - count: {}", memberFoods.size());
+        }
 
         return MemberResponse.Basic.from(savedMember);
     }
