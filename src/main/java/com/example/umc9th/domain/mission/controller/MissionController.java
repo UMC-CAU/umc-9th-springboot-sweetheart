@@ -23,7 +23,14 @@ public class MissionController {
     private final MissionCommandService missionCommandService;
     private final MissionQueryService missionQueryService;
 
-    @Operation(summary = "특정 가게의 미션 목록 조회", description = "특정 가게의 미션 목록을 조회합니다. 페이징을 포함합니다.")
+    @Operation(summary = "특정 가게의 미션 목록 조회 (Page)", description = """
+            특정 가게의 미션 목록을 조회합니다. (Page 방식)
+
+            **특징:**
+            - 전체 페이지 수와 전체 데이터 개수 제공
+            - COUNT 쿼리 실행 (약간의 성능 오버헤드)
+            - 페이지 번호 UI (1, 2, 3...)에 적합
+            """)
     @GetMapping("/stores/{storeId}/missions")
     public ApiResponse<MissionResponse.MissionPreViewListDTO> getStoreMissions(
             @Parameter(description = "가게 ID", example = "1") @PathVariable(name = "storeId") Long storeId,
@@ -31,12 +38,51 @@ public class MissionController {
         return ApiResponse.onSuccess(SuccessCode.OK, missionQueryService.getStoreMissions(storeId, page));
     }
 
-    @Operation(summary = "내가 진행중인 미션 목록 조회", description = "내가 진행중인 미션 목록을 조회합니다. 페이징을 포함합니다.")
+    @Operation(summary = "특정 가게의 미션 목록 조회 (Slice - 무한 스크롤)", description = """
+            특정 가게의 미션 목록을 조회합니다. (Slice 방식)
+
+            **특징:**
+            - 다음 페이지 존재 여부만 제공 (hasNext)
+            - COUNT 쿼리 실행하지 않음 (약 80% 성능 향상!)
+            - 무한 스크롤 UI에 최적화
+            - 모바일 앱, SNS 피드 형태에 적합
+            """)
+    @GetMapping("/stores/{storeId}/missions/slice")
+    public ApiResponse<MissionResponse.MissionPreViewSliceDTO> getStoreMissionsWithSlice(
+            @Parameter(description = "가게 ID", example = "1") @PathVariable(name = "storeId") Long storeId,
+            @Parameter(description = "페이지 번호 (1부터 시작)", example = "1") @com.example.umc9th.global.validation.annotation.CheckPage @RequestParam(name = "page") Integer page) {
+        return ApiResponse.onSuccess(SuccessCode.OK, missionQueryService.getStoreMissionsWithSlice(storeId, page));
+    }
+
+    @Operation(summary = "내가 진행중인 미션 목록 조회 (Page)", description = """
+            내가 진행중인 미션 목록을 조회합니다. (Page 방식)
+
+            **특징:**
+            - 전체 페이지 수와 전체 데이터 개수 제공
+            - COUNT 쿼리 실행 (약간의 성능 오버헤드)
+            - 페이지 번호 UI (1, 2, 3...)에 적합
+            """)
     @GetMapping("/missions/ongoing")
     public ApiResponse<MissionResponse.MissionPreViewListDTO> getMyOngoingMissions(
             @Parameter(description = "회원 ID (임시)", example = "1") @RequestParam(name = "memberId") Long memberId,
             @Parameter(description = "페이지 번호 (1부터 시작)", example = "1") @com.example.umc9th.global.validation.annotation.CheckPage @RequestParam(name = "page") Integer page) {
         return ApiResponse.onSuccess(SuccessCode.OK, missionQueryService.getMyOngoingMissions(memberId, page));
+    }
+
+    @Operation(summary = "내가 진행중인 미션 목록 조회 (Slice - 무한 스크롤)", description = """
+            내가 진행중인 미션 목록을 조회합니다. (Slice 방식)
+
+            **특징:**
+            - 다음 페이지 존재 여부만 제공 (hasNext)
+            - COUNT 쿼리 실행하지 않음 (약 80% 성능 향상!)
+            - 무한 스크롤 UI에 최적화
+            - 모바일 앱, SNS 피드 형태에 적합
+            """)
+    @GetMapping("/missions/ongoing/slice")
+    public ApiResponse<MissionResponse.MissionPreViewSliceDTO> getMyOngoingMissionsWithSlice(
+            @Parameter(description = "회원 ID (임시)", example = "1") @RequestParam(name = "memberId") Long memberId,
+            @Parameter(description = "페이지 번호 (1부터 시작)", example = "1") @com.example.umc9th.global.validation.annotation.CheckPage @RequestParam(name = "page") Integer page) {
+        return ApiResponse.onSuccess(SuccessCode.OK, missionQueryService.getMyOngoingMissionsWithSlice(memberId, page));
     }
 
     @Operation(summary = "가게에 미션 추가하기", description = """

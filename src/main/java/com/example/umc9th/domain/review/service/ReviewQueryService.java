@@ -19,11 +19,14 @@ public class ReviewQueryService {
     private final ReviewQueryRepository reviewQueryRepository;
 
     /**
-     * 내가 작성한 리뷰 목록 조회 (페이징)
+     * 내가 작성한 리뷰 목록 조회 (페이징 - Page 방식)
+     *
+     * COUNT 쿼리를 실행하여 전체 페이지 수와 전체 데이터 개수를 제공합니다.
+     * 페이지 번호 UI (1, 2, 3...)가 필요한 경우 사용하세요.
      *
      * @param memberId 회원 ID
      * @param page 페이지 번호 (1부터 시작)
-     * @return 페이징된 리뷰 목록
+     * @return 페이징된 리뷰 목록 (전체 개수 포함)
      */
     public ReviewResponse.ReviewPreViewListDTO getMyReviewsList(Long memberId, Integer page) {
         log.info("[getMyReviewsList] memberId={}, page={}", memberId, page);
@@ -37,6 +40,30 @@ public class ReviewQueryService {
                 memberId, null, null, null, null, pageRequest);
 
         return com.example.umc9th.domain.review.converter.ReviewConverter.toReviewPreViewListDTO(reviewPage);
+    }
+
+    /**
+     * 내가 작성한 리뷰 목록 조회 (무한 스크롤 - Slice 방식)
+     *
+     * COUNT 쿼리를 실행하지 않아 성능이 우수합니다.
+     * 무한 스크롤 UI에 적합한 방식입니다.
+     *
+     * @param memberId 회원 ID
+     * @param page 페이지 번호 (1부터 시작)
+     * @return 무한 스크롤용 리뷰 목록 (다음 페이지 존재 여부만 포함)
+     */
+    public ReviewResponse.ReviewPreViewSliceDTO getMyReviewsListWithSlice(Long memberId, Integer page) {
+        log.info("[getMyReviewsListWithSlice] memberId={}, page={}", memberId, page);
+
+        // PageRequest 생성 (0-based index로 변환)
+        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest
+                .of(page - 1, 10);
+
+        // QueryRepository의 Slice 메서드 사용 (COUNT 쿼리 없음!)
+        org.springframework.data.domain.Slice<Review> reviewSlice = reviewQueryRepository.findReviewsWithSlice(
+                memberId, null, null, null, null, pageRequest);
+
+        return com.example.umc9th.domain.review.converter.ReviewConverter.toReviewPreViewSliceDTO(reviewSlice);
     }
 
     /**

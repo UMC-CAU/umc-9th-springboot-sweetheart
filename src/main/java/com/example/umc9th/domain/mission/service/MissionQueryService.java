@@ -24,6 +24,10 @@ public class MissionQueryService {
   private final com.example.umc9th.domain.member.repository.MemberRepository memberRepository;
   private final com.example.umc9th.domain.mission.repository.MemberMissionRepository memberMissionRepository;
 
+  /**
+   * 가게의 미션 목록 조회 (Page 방식)
+   * COUNT 쿼리를 실행하여 전체 페이지 수와 전체 데이터 개수를 제공합니다.
+   */
   public MissionResponse.MissionPreViewListDTO getStoreMissions(Long storeId, Integer page) {
     Store store = storeRepository.findById(storeId)
         .orElseThrow(() -> new CustomException(ErrorCode.STORE_NOT_FOUND));
@@ -34,6 +38,26 @@ public class MissionQueryService {
     return MissionConverter.toMissionPreViewListDTO(missionPage);
   }
 
+  /**
+   * 가게의 미션 목록 조회 (Slice 방식)
+   * COUNT 쿼리를 실행하지 않아 성능이 우수합니다.
+   * 무한 스크롤 UI에 적합한 방식입니다.
+   */
+  public MissionResponse.MissionPreViewSliceDTO getStoreMissionsWithSlice(Long storeId, Integer page) {
+    Store store = storeRepository.findById(storeId)
+        .orElseThrow(() -> new CustomException(ErrorCode.STORE_NOT_FOUND));
+
+    PageRequest pageRequest = PageRequest.of(page - 1, 10);
+    org.springframework.data.domain.Slice<Mission> missionSlice = missionRepository.findSliceByStore(store,
+        pageRequest);
+
+    return MissionConverter.toMissionPreViewSliceDTO(missionSlice);
+  }
+
+  /**
+   * 내 진행중인 미션 목록 조회 (Page 방식)
+   * COUNT 쿼리를 실행하여 전체 페이지 수와 전체 데이터 개수를 제공합니다.
+   */
   public MissionResponse.MissionPreViewListDTO getMyOngoingMissions(Long memberId, Integer page) {
     com.example.umc9th.domain.member.entity.Member member = memberRepository.findById(memberId)
         .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
@@ -44,5 +68,22 @@ public class MissionQueryService {
             pageRequest);
 
     return MissionConverter.toMemberMissionPreViewListDTO(memberMissionPage);
+  }
+
+  /**
+   * 내 진행중인 미션 목록 조회 (Slice 방식)
+   * COUNT 쿼리를 실행하지 않아 성능이 우수합니다.
+   * 무한 스크롤 UI에 적합한 방식입니다.
+   */
+  public MissionResponse.MissionPreViewSliceDTO getMyOngoingMissionsWithSlice(Long memberId, Integer page) {
+    com.example.umc9th.domain.member.entity.Member member = memberRepository.findById(memberId)
+        .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+    PageRequest pageRequest = PageRequest.of(page - 1, 10);
+    org.springframework.data.domain.Slice<com.example.umc9th.domain.mission.entity.mapping.MemberMission> memberMissionSlice = memberMissionRepository
+        .findSliceByMemberAndStatus(member, com.example.umc9th.domain.mission.enums.MissionStatus.IN_PROGRESS,
+            pageRequest);
+
+    return MissionConverter.toMemberMissionPreViewSliceDTO(memberMissionSlice);
   }
 }

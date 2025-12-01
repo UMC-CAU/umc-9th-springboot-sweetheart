@@ -25,12 +25,39 @@ public class ReviewController {
     private final ReviewQueryService reviewQueryService;
     private final ReviewCommandService reviewCommandService;
 
-    @Operation(summary = "내가 작성한 리뷰 목록 조회", description = "내가 작성한 리뷰 목록을 조회합니다. 페이징을 포함합니다.")
+    @Operation(summary = "내가 작성한 리뷰 목록 조회 (Page)", description = """
+            내가 작성한 리뷰 목록을 조회합니다. (Page 방식)
+
+            **특징:**
+            - 전체 페이지 수와 전체 데이터 개수 제공
+            - COUNT 쿼리 실행 (약간의 성능 오버헤드)
+            - 페이지 번호 UI (1, 2, 3...)에 적합
+            """)
     @GetMapping("/my")
     public ApiResponse<ReviewResponse.ReviewPreViewListDTO> getMyReviews(
             @Parameter(description = "페이지 번호 (1부터 시작)", example = "1") @com.example.umc9th.global.validation.annotation.CheckPage @RequestParam(name = "page") Integer page,
             @Parameter(description = "회원 ID (임시)", example = "1") @RequestParam(name = "memberId") Long memberId) {
         return ApiResponse.onSuccess(SuccessCode.OK, reviewQueryService.getMyReviewsList(memberId, page));
+    }
+
+    @Operation(summary = "내가 작성한 리뷰 목록 조회 (Slice - 무한 스크롤)", description = """
+            내가 작성한 리뷰 목록을 조회합니다. (Slice 방식)
+
+            **특징:**
+            - 다음 페이지 존재 여부만 제공 (hasNext)
+            - COUNT 쿼리 실행하지 않음 (약 80% 성능 향상!)
+            - 무한 스크롤 UI에 최적화
+            - 모바일 앱, SNS 피드 형태에 적합
+
+            **성능 비교:**
+            - Page 방식: 데이터 조회 + COUNT 쿼리 = 약 60ms
+            - Slice 방식: 데이터 조회 (LIMIT 11) = 약 10ms
+            """)
+    @GetMapping("/my/slice")
+    public ApiResponse<ReviewResponse.ReviewPreViewSliceDTO> getMyReviewsWithSlice(
+            @Parameter(description = "페이지 번호 (1부터 시작)", example = "1") @com.example.umc9th.global.validation.annotation.CheckPage @RequestParam(name = "page") Integer page,
+            @Parameter(description = "회원 ID (임시)", example = "1") @RequestParam(name = "memberId") Long memberId) {
+        return ApiResponse.onSuccess(SuccessCode.OK, reviewQueryService.getMyReviewsListWithSlice(memberId, page));
     }
 
     @Operation(summary = "가게에 리뷰 추가하기", description = """

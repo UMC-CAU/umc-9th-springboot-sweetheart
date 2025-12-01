@@ -72,17 +72,53 @@ public class MissionResponse {
     }
 
     /**
-     * 미션 목록 조회 응답 DTO (페이징 포함)
+     * 미션 목록 조회 응답 DTO (페이징 포함 - Page 사용)
      */
     @Getter
     @Builder
     @AllArgsConstructor
+    @Schema(description = "미션 목록 조회 응답 (Page)")
     public static class MissionPreViewListDTO {
+        @Schema(description = "미션 목록")
         private java.util.List<MissionPreViewDTO> missionList;
+
+        @Schema(description = "현재 페이지 미션 개수", example = "10")
         private Integer listSize;
+
+        @Schema(description = "전체 페이지 수", example = "5")
         private Integer totalPage;
+
+        @Schema(description = "전체 미션 개수", example = "50")
         private Long totalElements;
+
+        @Schema(description = "첫 페이지 여부", example = "true")
         private Boolean isFirst;
+
+        @Schema(description = "마지막 페이지 여부", example = "false")
+        private Boolean isLast;
+    }
+
+    /**
+     * 미션 목록 조회 응답 DTO (무한 스크롤 - Slice 사용)
+     */
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    @Schema(description = "미션 목록 조회 응답 (Slice - 무한 스크롤)")
+    public static class MissionPreViewSliceDTO {
+        @Schema(description = "미션 목록")
+        private java.util.List<MissionPreViewDTO> missionList;
+
+        @Schema(description = "현재 페이지 미션 개수", example = "10")
+        private Integer listSize;
+
+        @Schema(description = "다음 페이지 존재 여부", example = "true")
+        private Boolean hasNext;
+
+        @Schema(description = "첫 페이지 여부", example = "true")
+        private Boolean isFirst;
+
+        @Schema(description = "마지막 페이지 여부", example = "false")
         private Boolean isLast;
     }
 
