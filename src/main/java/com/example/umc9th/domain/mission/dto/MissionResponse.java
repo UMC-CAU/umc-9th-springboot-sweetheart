@@ -70,4 +70,45 @@ public class MissionResponse {
                     .build();
         }
     }
+
+    /**
+     * 미션 목록 조회 응답 DTO (페이징 포함)
+     */
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    public static class MissionPreViewListDTO {
+        private java.util.List<MissionPreViewDTO> missionList;
+        private Integer listSize;
+        private Integer totalPage;
+        private Long totalElements;
+        private Boolean isFirst;
+        private Boolean isLast;
+    }
+
+    /**
+     * 미션 상세 정보 DTO
+     */
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    public static class MissionPreViewDTO {
+        private Long id;
+        private String name;
+        private String conditional;
+        private Integer point;
+        private LocalDate deadline;
+        private LocalDateTime createdAt;
+
+        public static MissionPreViewDTO from(Mission mission) {
+            return MissionPreViewDTO.builder()
+                    .id(mission.getId())
+                    .name(mission.getName())
+                    .conditional(mission.getConditional())
+                    .point(mission.getPoint())
+                    .deadline(mission.getDeadline())
+                    .createdAt(mission.getCreatedAt())
+                    .build();
+        }
+    }
 }
