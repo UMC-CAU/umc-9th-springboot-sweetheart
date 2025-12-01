@@ -25,13 +25,27 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.DynamicUpdate;
 
+/**
+ * Member 엔티티
+ *
+ * @DynamicUpdate 적용 이유:
+ * - updateInfo() 메서드: 일부 필드만 선택적 업데이트
+ * - addPoints(), deductPoints(): point 필드만 빈번하게 업데이트
+ * - 부분 업데이트가 많아 Dynamic SQL이 효과적
+ *
+ * 성능 개선 예상:
+ * - 포인트 업데이트 시: 2개 필드만 UPDATE (vs 기본 14개)
+ * - 전화번호 변경 시: 2개 필드만 UPDATE (vs 기본 14개)
+ */
 @Entity
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Table(name = "member")
+@DynamicUpdate  // 실제 변경된 필드만 UPDATE 쿼리에 포함
 public class Member extends BaseEntity {
 
     @Id
