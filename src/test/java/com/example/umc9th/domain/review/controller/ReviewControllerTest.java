@@ -27,7 +27,13 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.example.umc9th.domain.review.dto.ReviewResponse;
 import com.example.umc9th.domain.review.service.ReviewQueryService;
+import com.example.umc9th.domain.review.service.ReviewCommandService;
 import com.example.umc9th.global.exception.GlobalExceptionHandler;
+import com.example.umc9th.global.validation.validator.StoreExistValidator;
+import com.example.umc9th.global.validation.validator.MemberExistValidator;
+import com.example.umc9th.domain.store.repository.StoreRepository;
+import com.example.umc9th.domain.member.repository.MemberRepository;
+import org.springframework.context.annotation.Import;
 
 /**
  * ReviewController 테스트
@@ -55,6 +61,10 @@ import com.example.umc9th.global.exception.GlobalExceptionHandler;
         ReviewController.class,
         GlobalExceptionHandler.class  // 예외 처리 테스트를 위해 포함
 })
+@Import({
+        StoreExistValidator.class,  // @ExistStore 검증을 위한 Validator
+        MemberExistValidator.class   // @ExistMember 검증을 위한 Validator
+})
 @DisplayName("ReviewController 테스트")
 class ReviewControllerTest {
 
@@ -73,11 +83,32 @@ class ReviewControllerTest {
     private ReviewQueryService reviewQueryService;
 
     /**
+     * ReviewCommandService Mock
+     * - ReviewController의 POST 엔드포인트에서 사용
+     */
+    @MockitoBean
+    private ReviewCommandService reviewCommandService;
+
+    /**
      * DiscordWebhookService Mock
      * - GlobalExceptionHandler가 DiscordWebhookService를 주입받으므로 필요
      */
     @MockitoBean
     private com.example.umc9th.global.notification.DiscordWebhookService discordWebhookService;
+
+    /**
+     * StoreRepository Mock
+     * - StoreExistValidator가 StoreRepository를 주입받으므로 필요
+     */
+    @MockitoBean
+    private StoreRepository storeRepository;
+
+    /**
+     * MemberRepository Mock
+     * - MemberExistValidator가 MemberRepository를 주입받으므로 필요
+     */
+    @MockitoBean
+    private MemberRepository memberRepository;
 
 
     // ===== GET /api/reviews - 통합 리뷰 조회 =====
