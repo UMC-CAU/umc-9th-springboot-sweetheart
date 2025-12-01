@@ -85,4 +85,19 @@ public class ReviewResponse {
                     .build();
         }
     }
+
+    /**
+     * 리뷰 목록 조회 응답 DTO (페이징 포함)
+     */
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    public static class ReviewPreViewListDTO {
+        private java.util.List<MyReview> reviewList;
+        private Integer listSize;
+        private Integer totalPage;
+        private Long totalElements;
+        private Boolean isFirst;
+        private Boolean isLast;
+    }
 }

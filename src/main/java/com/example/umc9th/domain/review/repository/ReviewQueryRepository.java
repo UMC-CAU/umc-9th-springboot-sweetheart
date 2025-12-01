@@ -4,6 +4,9 @@ import com.example.umc9th.domain.review.entity.Review;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -138,5 +141,55 @@ public class ReviewQueryRepository {
 
     private BooleanExpression storeIdEq(Long storeId) {
         return storeId != null ? review.store.id.eq(storeId) : null;
+    }
+
+    /**
+     * 페이징을 지원하는 범용 리뷰 검색 (동적 쿼리 + 페이징)
+     *
+     * @param memberId 회원 ID (nullable)
+     * @param storeId 가게 ID (nullable)
+     * @param storeName 가게 이름 부분 일치 (nullable)
+     * @param minScore 최소 별점 (nullable)
+     * @param maxScore 최대 별점 (nullable)
+     * @param pageable 페이징 정보
+     * @return 페이징된 리뷰 리스트
+     */
+    public Page<Review> findReviewsWithPaging(
+            Long memberId, Long storeId, String storeName,
+            Float minScore, Float maxScore, Pageable pageable) {
+
+        // 1. 데이터 조회 (LIMIT, OFFSET 적용)
+        List<Review> reviews = queryFactory
+                .selectFrom(review)
+                .distinct()
+                .join(review.store, store).fetchJoin()
+                .join(review.user, member).fetchJoin()
+                .where(
+                        memberIdEq(memberId),
+                        storeIdEq(storeId),
+                        storeNameContains(storeName),
+                        starBetween(minScore, maxScore)
+                )
+                .orderBy(review.createdAt.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        // 2. 전체 개수 조회 (페이징 정보 계산용)
+        Long total = queryFactory
+                .select(review.count())
+                .from(review)
+                .join(review.store, store)
+                .join(review.user, member)
+                .where(
+                        memberIdEq(memberId),
+                        storeIdEq(storeId),
+                        storeNameContains(storeName),
+                        starBetween(minScore, maxScore)
+                )
+                .fetchOne();
+
+        // 3. Page 객체로 변환
+        return new PageImpl<>(reviews, pageable, total != null ? total : 0);
     }
 }
