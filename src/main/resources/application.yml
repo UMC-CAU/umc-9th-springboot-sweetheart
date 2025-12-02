@@ -22,6 +22,20 @@ spring:
       hibernate:
         format_sql: true
 
+  # Google OAuth2 설정
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/login/oauth2/code/google}
+            scope:
+              - email
+              - profile
+            client-name: Google
+
 # Swagger UI 설정
 springdoc:
   api-docs:
@@ -52,3 +66,14 @@ discord:
   webhook:
     url: ${DISCORD_WEBHOOK_URL:}
     enabled: ${DISCORD_WEBHOOK_ENABLED:false}
+
+# JWT 설정
+jwt:
+  secret-key: ${JWT_SECRET_KEY:ZGh3YWlkc2F2ZXdhZXZ3b2ExMzlldTAzMXVjMnEyMkAwKTJFVio=}
+  access-token-expiration: ${JWT_ACCESS_EXPIRATION:14400000}  # 4시간 (ms)
+  refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}  # 7일 (ms)
+
+# OAuth2 로그인 성공 후 리다이렉트 URL (프론트엔드)
+oauth2:
+  redirect:
+    success-url: ${OAUTH2_REDIRECT_URL:http://localhost:3000/oauth/callback}

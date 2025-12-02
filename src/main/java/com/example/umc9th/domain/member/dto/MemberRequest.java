@@ -53,6 +53,60 @@ public class MemberRequest {
         private List<FoodName> foodPreferences;
     }
 
+    /**
+     * 일반 로그인을 위한 회원가입 DTO
+     */
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Join {
+
+        @NotBlank(message = "이름은 필수입니다")
+        @Size(min = 1, max = 50, message = "이름은 1자 이상 50자 이하여야 합니다")
+        private String name;
+
+        @NotBlank(message = "이메일은 필수입니다")
+        @Email(message = "올바른 이메일 형식이 아닙니다")
+        private String email;
+
+        @NotBlank(message = "비밀번호는 필수입니다")
+        @Size(min = 8, max = 20, message = "비밀번호는 8자 이상 20자 이하여야 합니다")
+        private String password;
+
+        @NotNull(message = "성별은 필수입니다")
+        private Gender gender;
+
+        @NotNull(message = "생년월일은 필수입니다")
+        @Past(message = "생년월일은 과거 날짜여야 합니다")
+        private LocalDate birth;
+
+        @NotBlank(message = "주소는 필수입니다")
+        private String address;
+
+        @NotBlank(message = "상세 주소는 필수입니다")
+        private String detailAddress;
+
+        private List<FoodName> foodPreferences;
+    }
+
+    /**
+     * 로그인 DTO
+     */
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Login {
+
+        @NotBlank(message = "이메일은 필수입니다")
+        @Email(message = "올바른 이메일 형식이 아닙니다")
+        private String email;
+
+        @NotBlank(message = "비밀번호는 필수입니다")
+        private String password;
+    }
+
     @Getter
     @Builder
     @NoArgsConstructor

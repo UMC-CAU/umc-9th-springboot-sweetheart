@@ -116,7 +116,25 @@ public class MemberController {
         return ApiResponse.onSuccess(SuccessCode.MEMBER_LIST_OK, members);
     }
 
-    @Operation(summary = "회원 생성", description = "새로운 회원을 생성합니다.")
+    @Operation(summary = "회원가입 (일반 로그인)", description = "일반 로그인을 위한 회원가입을 진행합니다. 비밀번호는 BCrypt로 암호화되어 저장됩니다.")
+    @PostMapping("/sign-up")
+    public ApiResponse<MemberResponse.Join> signup(@Valid @RequestBody MemberRequest.Join request) {
+        MemberResponse.Join member = memberService.signup(request);
+        return ApiResponse.onSuccess(SuccessCode.MEMBER_CREATED, member);
+    }
+
+    @Operation(
+            summary = "로그인 (JWT 토큰 발급)",
+            description = "이메일/비밀번호로 로그인하여 JWT Access Token을 발급받습니다. " +
+                    "발급받은 토큰을 Authorization 헤더에 'Bearer {token}' 형식으로 포함하여 API를 호출하세요."
+    )
+    @PostMapping("/login")
+    public ApiResponse<MemberResponse.Login> login(@Valid @RequestBody MemberRequest.Login request) {
+        MemberResponse.Login response = memberService.login(request);
+        return ApiResponse.onSuccess(SuccessCode.MEMBER_OK, response);
+    }
+
+    @Operation(summary = "회원 생성 (소셜 로그인)", description = "소셜 로그인을 위한 회원을 생성합니다.")
     @PostMapping
     public ApiResponse<MemberResponse.Basic> createMember(@Valid @RequestBody MemberRequest.Create request) {
         MemberResponse.Basic member = memberService.createMember(request);

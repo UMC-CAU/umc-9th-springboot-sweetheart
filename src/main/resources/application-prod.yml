@@ -6,7 +6,20 @@ spring:
       ddl-auto: validate  # ⚠️ 프로덕션: 스키마 검증만, 자동 변경 금지!
     show-sql: false  # 프로덕션에서는 SQL 로그 비활성화 (성능)
 
+  # Production OAuth2 기본값 (환경 변수로 오버라이드 가능)
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: ${GOOGLE_REDIRECT_URI:https://spring-swagger-api.log8.kr/login/oauth2/code/google}
+
 discord:
   webhook:
     enabled: true  # 운영 서버에서는 디스코드 알림 활성화
     # url은 환경변수 DISCORD_WEBHOOK_URL로 설정
+
+# Production OAuth2 리다이렉트 기본값
+oauth2:
+  redirect:
+    success-url: ${OAUTH2_REDIRECT_URL:https://your-frontend.com/oauth/callback}

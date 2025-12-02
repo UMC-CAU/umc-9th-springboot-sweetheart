@@ -31,6 +31,7 @@ public enum ErrorCode implements BaseCode {
     MEMBER_DUPLICATE_SOCIAL_UID(409, "MEMBER_409", "이미 가입된 소셜 계정입니다"),
     MEMBER_NAME_EMPTY(400, "MEMBER_400", "회원 이름은 필수입니다"),
     MEMBER_INVALID_EMAIL(400, "MEMBER_400", "올바른 이메일 형식이 아닙니다"),
+    MEMBER_INVALID_PASSWORD(401, "MEMBER_401", "비밀번호가 일치하지 않습니다"),
 
     // Review
     REVIEW_NOT_FOUND(404, "REVIEW_404", "리뷰를 찾을 수 없습니다"),
@@ -47,7 +48,13 @@ public enum ErrorCode implements BaseCode {
     LOCATION_NOT_FOUND(404, "LOCATION_404", "지역을 찾을 수 없습니다"),
 
     // Food
-    FOOD_NOT_FOUND(404, "FOOD_404", "음식 카테고리를 찾을 수 없습니다");
+    FOOD_NOT_FOUND(404, "FOOD_404", "음식 카테고리를 찾을 수 없습니다"),
+
+    // Auth & Token
+    INVALID_TOKEN(401, "AUTH_401", "유효하지 않은 토큰입니다"),
+    EXPIRED_TOKEN(401, "AUTH_401", "만료된 토큰입니다"),
+    TOKEN_NOT_FOUND(404, "AUTH_404", "토큰을 찾을 수 없습니다 (이미 로그아웃됨)"),
+    REFRESH_TOKEN_REQUIRED(400, "AUTH_400", "Refresh Token이 필요합니다");
 
     private final int status;
     private final String code;

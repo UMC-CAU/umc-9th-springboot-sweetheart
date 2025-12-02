@@ -7,6 +7,7 @@ import java.util.List;
 import com.example.umc9th.domain.member.entity.mapping.MemberFood;
 import com.example.umc9th.domain.member.entity.mapping.MemberTerm;
 import com.example.umc9th.domain.member.enums.Gender;
+import com.example.umc9th.global.auth.enums.Role;
 import com.example.umc9th.global.auth.enums.SocialType;
 import com.example.umc9th.global.entity.BaseEntity;
 
@@ -81,6 +82,14 @@ public class Member extends BaseEntity {
 
     @Column(name = "email", nullable = false)
     private String email;
+
+    @Column(name = "password")
+    private String password;
+
+    @Column(name = "role", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private Role role = Role.ROLE_USER;
 
     @Column(name = "phone_number")
     private String phoneNumber;

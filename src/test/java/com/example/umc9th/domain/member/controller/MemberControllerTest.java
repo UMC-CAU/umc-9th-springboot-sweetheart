@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
@@ -63,6 +64,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
         MemberController.class,
         GlobalExceptionHandler.class  // 예외 처리 테스트를 위해 포함
 })
+@AutoConfigureMockMvc(addFilters = false)  // ⭐ Security 필터 완전히 비활성화 (테스트에서는 인증 불필요)
 @DisplayName("MemberController 테스트")
 class MemberControllerTest {
 
