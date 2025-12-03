@@ -38,9 +38,17 @@ services:
       DB_USER: ${DB_USER:?DB_USER is required}
       DB_PW: ${DB_PW:?DB_PW is required}
 
-      # JPA 설정
-      SPRING_JPA_HIBERNATE_DDL_AUTO: ${DDL_AUTO:-update}
-      SPRING_JPA_SHOW_SQL: ${SHOW_SQL:-true}
+      # Discord Webhook (에러 알림)
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      DISCORD_WEBHOOK_ENABLED: "true"
+
+      # Google OAuth2
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-https://spring-swagger-api.log8.kr/login/oauth2/code/google}
+
+      # OAuth2 리다이렉트 URL
+      OAUTH2_REDIRECT_URL: ${OAUTH2_REDIRECT_URL:-}
 
       # JVM 메모리 설정
       JAVA_OPTS: -Xms512m -Xmx1024m

@@ -33,6 +33,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create .env file from GitHub Secrets
+        run: |
+          cd ~/projects/umc-9th-springboot-sweetheart
+
+          echo "🔐 Creating .env file from GitHub Secrets..."
+          cat > .env << EOF
+          # Database Configuration (Auto-generated from GitHub Secrets)
+          DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PW=${{ secrets.DB_PW }}
+
+          # Spring Profile
+          SPRING_PROFILES_ACTIVE=prod
+
+          # Discord Webhook
+          DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}
+
+          # Google OAuth2
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}
+
+          # OAuth2 Frontend Redirect
+          OAUTH2_REDIRECT_URL=${{ secrets.OAUTH2_REDIRECT_URL }}
+          EOF
+
+          echo "✅ .env file created successfully!"
+
       - name: Deploy to Mac Mini
         run: |
           cd ~/projects/umc-9th-springboot-sweetheart
