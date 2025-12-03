@@ -57,6 +57,9 @@ jobs:
 
           # OAuth2 Frontend Redirect
           OAUTH2_REDIRECT_URL=${{ secrets.OAUTH2_REDIRECT_URL }}
+
+          # JWT Configuration
+          JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
           EOF
 
           echo "✅ .env file created successfully!"

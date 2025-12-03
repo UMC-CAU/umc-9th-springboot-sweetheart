@@ -99,6 +99,7 @@ public class MemberService {
      * - 이메일/비밀번호 검증
      * - JWT Access Token 발급
      */
+    @Transactional
     public MemberResponse.Login login(MemberRequest.Login request) {
         log.info("[MemberService.login] 로그인 시도 - email: {}", request.getEmail());
 
