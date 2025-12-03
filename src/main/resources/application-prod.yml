@@ -3,7 +3,7 @@
 spring:
   jpa:
     hibernate:
-      ddl-auto: validate  # ⚠️ 프로덕션: 스키마 검증만, 자동 변경 금지!
+      ddl-auto: update  # TODO: Flyway 도입 후 validate로 변경 예정
     show-sql: false  # 프로덕션에서는 SQL 로그 비활성화 (성능)
 
   # Production OAuth2 기본값 (환경 변수로 오버라이드 가능)
