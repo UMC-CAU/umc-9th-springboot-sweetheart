@@ -47,6 +47,10 @@ dependencies {
     // OAuth2 Client (Google 로그인)
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
+    // Flyway (DB 마이그레이션)
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-mysql'
+
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'com.mysql:mysql-connector-j'
     annotationProcessor 'org.projectlombok:lombok'

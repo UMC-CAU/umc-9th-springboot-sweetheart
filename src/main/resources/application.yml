@@ -22,6 +22,10 @@ spring:
       hibernate:
         format_sql: true
 
+  # Flyway 설정 (기본: 비활성화 - 로컬/테스트 환경)
+  flyway:
+    enabled: false  # 프로덕션에서만 활성화
+
   # Google OAuth2 설정
   security:
     oauth2:
