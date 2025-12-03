@@ -6,6 +6,19 @@ spring:
       ddl-auto: update  # 로컬: 엔티티 변경 시 자동 반영 (개발 편의)
     show-sql: true  # 로컬: SQL 로그 활성화 (학습용)
 
+  # Local OAuth2 기본값 (환경 변수로 오버라이드 가능)
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/login/oauth2/code/google}
+
 discord:
   webhook:
     enabled: false  # 로컬에서는 디스코드 알림 비활성화
+
+# Local OAuth2 리다이렉트 기본값
+oauth2:
+  redirect:
+    success-url: ${OAUTH2_REDIRECT_URL:http://localhost:3000/oauth/callback}

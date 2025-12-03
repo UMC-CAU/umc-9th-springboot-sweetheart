@@ -129,4 +129,48 @@ public class MemberResponse {
                     .build();
         }
     }
+
+    /**
+     * 회원가입 응답 DTO
+     */
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    public static class Join {
+        private Long memberId;
+        private String name;
+        private String email;
+
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+        private LocalDateTime createdAt;
+
+        public static Join from(Member member) {
+            return Join.builder()
+                    .memberId(member.getId())
+                    .name(member.getName())
+                    .email(member.getEmail())
+                    .createdAt(member.getCreatedAt())
+                    .build();
+        }
+    }
+
+    /**
+     * 로그인 응답 DTO
+     */
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    public static class Login {
+        private Long memberId;
+        private String accessToken;
+        private String refreshToken;  // Refresh Token 추가
+
+        public static Login of(Member member, String accessToken, String refreshToken) {
+            return Login.builder()
+                    .memberId(member.getId())
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .build();
+        }
+    }
 }

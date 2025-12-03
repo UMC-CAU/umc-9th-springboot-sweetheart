@@ -18,7 +18,31 @@ spring:
     console:
       enabled: false
 
+  # OAuth2 설정 (테스트용)
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-client-id
+            client-secret: test-client-secret
+            redirect-uri: http://localhost:8080/login/oauth2/code/google
+            scope:
+              - email
+              - profile
+
 logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# JWT 설정 (테스트용)
+jwt:
+  secret-key: dGVzdC1qd3Qtc2VjcmV0LWtleS1mb3ItdGVzdGluZy1wdXJwb3NlLW9ubHktMTIzNDU2Nzg5MA==
+  access-token-expiration: 14400000  # 4시간
+  refresh-token-expiration: 604800000  # 7일
+
+# OAuth2 리다이렉트 URL (테스트용)
+oauth2:
+  redirect:
+    success-url: http://localhost:3000/oauth/callback
